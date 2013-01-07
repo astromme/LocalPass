@@ -25,7 +25,7 @@ LocalPass stores and encrypts the password database locally. No unencrypted data
 Authors
 -------
 
-* Andrew Stromme <andrew.stromme@gmail.com>
+* Andrew Stromme &lt;andrew.stromme@gmail.com&gt;
 
 
 [canary-dl]: https://www.google.com/intl/en/chrome/browser/canary.html
