@@ -12,7 +12,7 @@ Installation
 * Install [Chrome Canary][canary-dl]
 * Enable "Experimental Extension APIs" in chrome://flags
 * Download [this zip of LocalPass][localpass-dl]
-* Unzip LocalPass.zip
+* Unzip LocalPass-master.zip
 * On chrome://extensions click the "Enable Developer Mode" checkbox
 * Click the "Load unpacked extension..." button and select the app subdirectory of LocalPass
 * Run the app from the new tab page
