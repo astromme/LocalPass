@@ -22,6 +22,15 @@ Architecture
 
 LocalPass stores and encrypts the password database locally. No unencrypted data is ever sent to the server, and the server never has the decryption key.
 
+
+Technologies
+------------
+
+* [Chrome App Platform][chrome-app-platform]
+* [AngularJS][angularjs]
+* [Stanford Javascript Crypto Library][sjcl]
+* [JSONEditor][jsoneditor]
+
 Authors
 -------
 
@@ -30,3 +39,7 @@ Authors
 
 [canary-dl]: https://www.google.com/intl/en/chrome/browser/canary.html
 [localpass-dl]: https://github.com/astromme/LocalPass/archive/master.zip
+[chrome-app-platform]: http://developer.chrome.com/stable/apps/about_apps.html
+[angularjs]: http://angularjs.org/
+[sjcl]: http://bitwiseshiftleft.github.com/sjcl/
+[jsoneditor]: https://github.com/josdejong/jsoneditoronline
