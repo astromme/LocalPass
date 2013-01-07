@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html ng-app="" ng-csp>
+  <head>
+  	<link rel="stylesheet" type="text/css" href="lib/jsoneditor/jsoneditor.css">
+  	<link rel="stylesheet" type="text/css" href="app.css">
+
+    <script type="text/javascript" src="lib/jsoneditor/jsoneditor.js"></script>
+    <script type="text/javascript" src="lib/angularjs/angular.js"></script>
+    <script type="text/javascript" src="lib/sjcl/sjcl.min.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+  </head>
+  <body ng-controller="DatabaseControl">
+  	<div id="header">
+	  	<h1>LocalPass</h1>
+	  	<span id="database_name">{{database_name}}</span>
+	  	<form ng-submit="unlock()"><input ng-show="isLocked()" value="Unlock" type="submit"></form>
+	  	<form ng-submit="lock()"><input ng-hide="isLocked()" value="Lock" type="submit"></form>
+	  	<button id="close_window_button" ng-click="closeWindow()"></button>
+	</div>
+
+	<div id="content">
+	  	<div id="main_content">
+		    <div id="jsoneditor"></div>
+	  	</div>
+	</div>
+
+  	<div id="left_sidebar">
+	  	<div id="entries_searchbox_container">
+	  		<input id="entries_searchbox" class="searchbox" placeholder="search..."></input>
+	  	</div>
+
+	 	<div id="entries_list">
+		  	<ul name="entries" size=5>
+		  		<li ng-repeat="entry in unlocked_database.entries"
+		  		    ng-index={{$index}}
+		  		    ng-class="{selected: $index==selected_entry}"
+		  		    ng-class-odd="'odd'"
+		  		    ng-class-even="'even'"
+		  		    ng-mousedown="entryClicked($event)">
+		  			<span class="entry">{{entry.title}}</span>
+		  		</li>
+		  	</ul>
+		</div>
+
+	  	<form id="addEntryForm" ng-submit="addEntry()">
+	  		<input type="text" ng-model="newEntryTitle" placeholder="add new entry here">
+	  		<input class="btn-primary" type="submit" value="add" style="display:none;">
+	  	</form>
+  	</div>
+
+  	<div id="footer">
+  	</div>
+
+  </body>
+</html>
