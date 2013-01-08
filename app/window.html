@@ -2,11 +2,18 @@
 <html ng-app="" ng-csp>
   <head>
   	<link rel="stylesheet" type="text/css" href="lib/jsoneditor/jsoneditor.css">
+  	<link rel="stylesheet" type="text/css" href="lib/bootstrap/css/bootstrap.css">
+  	<link rel="stylesheet" type="text/css" href="lib/angularui/angular-ui.css">
   	<link rel="stylesheet" type="text/css" href="app.css">
 
-    <script type="text/javascript" src="lib/jsoneditor/jsoneditor.js"></script>
+    <script type="text/javascript" src="lib/jquery/jquery-1.8.3.js"></script>
+    <script type="text/javascript" src="lib/bootstrap/js/bootstrap.js"></script>
     <script type="text/javascript" src="lib/angularjs/angular.js"></script>
+    <script type="text/javascript" src="lib/angularui/angular-ui.js"></script>
+    <script type="text/javascript" src="lib/jsoneditor/jsoneditor.js"></script>
     <script type="text/javascript" src="lib/sjcl/sjcl.min.js"></script>
+    <script type="text/javascript" src="lib/sha1/sha1.js"></script>
+    <script type="text/javascript" src="lib/pbkdf2/pbkdf2.js"></script>
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl">
@@ -15,6 +22,8 @@
 	  	<span id="database_name">{{database_name}}</span>
 	  	<form ng-submit="unlock()"><input ng-show="isLocked()" value="Unlock" type="submit"></form>
 	  	<form ng-submit="lock()"><input ng-hide="isLocked()" value="Lock" type="submit"></form>
+	  	<form ng-submit="new()"><input value="New" type="submit"></form>
+
 	  	<button id="close_window_button" ng-click="closeWindow()"></button>
 	</div>
 
@@ -26,14 +35,18 @@
 
   	<div id="left_sidebar">
 	  	<div id="entries_searchbox_container">
-	  		<input id="entries_searchbox" class="searchbox" placeholder="search..."></input>
+	  		<input id="entries_searchbox"
+	  		       class="searchbox"
+	  		       ng-model="searchString"
+	  		       ng-change="updateSearch()"
+	  		       placeholder="search..."></input>
 	  	</div>
 
 	 	<div id="entries_list">
 		  	<ul name="entries" size=5>
-		  		<li ng-repeat="entry in unlocked_database.entries"
-		  		    ng-index={{$index}}
-		  		    ng-class="{selected: $index==selected_entry}"
+		  		<li ng-repeat="entry in unencrypted_root.filtered_entries"
+		  		    uuid="{{entry.uuid}}"
+		  		    ng-class="{selected: entry.uuid==database.selected_entry}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
 		  		    ng-mousedown="entryClicked($event)">
