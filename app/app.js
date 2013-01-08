@@ -148,7 +148,6 @@ function DatabaseControl($scope) {
     $scope.editorToDatabase = function() {
         if ($scope.database.selected_entry != undefined) {
             $scope.unencrypted_root.entries[$scope.database.selected_entry].contents = $scope.editor.get();
-            $scope.unencrypted_root.filtered_entries[$scope.database.selected_entry].contents = $scope.editor.get();
         }
     }
 
