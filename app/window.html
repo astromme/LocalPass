@@ -19,7 +19,7 @@
   <body ng-controller="DatabaseControl">
   	<div id="header">
 	  	<h1>LocalPass</h1>
-	  	<span id="database_name">{{database_name}}</span>
+	  	<span id="database_name">{{database.name}}</span>
 	  	<form ng-submit="unlock()"><input ng-show="isLocked()" value="Unlock" type="submit"></form>
 	  	<form ng-submit="lock()"><input ng-hide="isLocked()" value="Lock" type="submit"></form>
 	  	<form ng-submit="new()"><input value="New" type="submit"></form>
