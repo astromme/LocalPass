@@ -25,12 +25,16 @@ h1 {
 	font-size: 25px;
 }
 
-#password_entry_modal {
+#enter_password_modal {
 	width: 500px;
 	height: 300px;
 	margin-left: -250px;
-	margin-top: -150px;
+}
 
+#create_password_modal {
+	width: 500px;
+	height: 300px;
+	margin-left: -250px;
 }
 
 .modal {

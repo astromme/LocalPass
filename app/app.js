@@ -62,6 +62,22 @@ function CreatePasswordControl($scope) {
     }
 }
 
+function EnterPasswordControl($scope) {
+    $scope.password = '';
+
+    $scope.verifyPassword = function() {
+        $scope.setPassword($scope.password, function() {
+            if ($scope.decrypt()) {
+                $scope.enterPasswordForm.$setValidity('incorrect', false);
+                 $("#enter_password_modal").modal('hide');
+
+            } else {
+                $scope.enterPasswordForm.$setValidity('incorrect', true);
+            }
+        });
+    }
+}
+
 function DatabaseControl($scope) {
     $scope.database = undefined;
     $scope.derived_key = undefined;
@@ -182,6 +198,21 @@ function DatabaseControl($scope) {
         $scope.database.encrypted_root = sjcl.encrypt($scope.derived_key, json);
     }
 
+    $scope.decrypt = function() {
+        try {
+            var json = sjcl.decrypt($scope.derived_key, $scope.database.encrypted_root);
+        } catch(e) {
+            console.log("$scope.decrypt() Error when decrypting database: " + e);
+            return false;
+        }
+        $scope.$apply(function() {
+            $scope.unencrypted_root = angular.fromJson(json);
+            $scope.databaseToEditor();
+            $scope.updateSearch();
+        });
+        return true;
+    }
+
     $scope.lock = function() {
         $scope.encrypt();
         $scope.unencrypted_root = undefined;
@@ -194,9 +225,7 @@ function DatabaseControl($scope) {
             return;
         }
 
-        var json = sjcl.decrypt(derived_key, $scope.database.encrypted_root);
-        $scope.unencrypted_root = angular.fromJson(json);
-        $scope.databaseToEditor;
+        $("#enter_password_modal").modal('show');
     }
 
     $scope.isLocked = function() {
