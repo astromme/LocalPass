@@ -19,10 +19,7 @@ li {
 }
 
 h1 {
-	margin: 0 0 0 0;
-	padding: 0 0 0 0;
-	display: inline;
-	font-size: 25px;
+
 }
 
 #enter_password_modal {
@@ -75,6 +72,47 @@ h1 {
 	background-color: #6C8CD5;
 	border: none;
 	color: white;
+}
+
+#header #title_container {
+
+}
+
+#header h1 {
+	font-size: 25px;
+	display: inline-block;
+	vertical-align: middle;
+	text-align: center;
+	height: 30px;
+	line-height: 30px;
+	margin: 0 3px 0 3px;
+	padding: 0;
+}
+
+#header input {
+	display: inline-block;
+	vertical-align: middle;
+	text-align: center;
+	margin: 0 3px 0 3px;
+	padding: 0;
+	width: auto;
+}
+
+#header .buttonbox {
+	position: absolute;
+	right: 29px; /* 6+17+6 from #close_window_button */
+	height: 30px; /* from #header */
+}
+
+#header .buttonbox button {
+	width: 4em;
+	height: 100%;
+	border: 0;
+	background-color: #6C8CD5;
+	color: white;
+	padding: 0;
+	border-left: 1px solid gray;
+	border-right: 1px solid gray;
 }
 
 #close_window_button {

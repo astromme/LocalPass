@@ -115,6 +115,10 @@ function DatabaseControl($scope) {
         $scope.unencrypted_root = Object({
             'entries' : {},
         });
+
+        setTimeout(function() {
+            $('#database_name_entry')[0].select();
+        }, 0);
     }
 
     $scope.load = function(database_uuid) {
