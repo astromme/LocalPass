@@ -80,10 +80,12 @@
 		  	</ul>
 		</div>
 
-	  	<form id="addEntryForm" ng-submit="addEntryClicked()">
-	  		<input type="text" ng-model="newEntryTitle" placeholder="add new entry here">
-	  		<input class="btn-primary" type="submit" value="add" style="display:none;">
-	  	</form>
+		<div id="add_entry_form_container">
+		  	<form ng-submit="addEntryClicked()">
+		  		<input id="add_entry_input" type="text" ng-model="newEntryTitle" placeholder="add new entry here">
+		  		<input class="btn-primary" type="submit" value="add" style="display:none;">
+		  	</form>
+	  	</div>
   	</div>
 
   	<div id="footer">
