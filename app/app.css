@@ -25,6 +25,36 @@ h1 {
 	font-size: 25px;
 }
 
+#password_entry_modal {
+	width: 500px;
+	height: 300px;
+	margin-left: -250px;
+	margin-top: -150px;
+
+}
+
+.modal {
+	display: none;
+	z-index: 1050;
+	background-color: white;
+	position: fixed;
+	left: 50%;
+	top: 50%;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #444444
+}
+
+.fade {
+	opacity: 0;
+	-webkit-transition: opacity 0.15s linear;
+	transition: opacity 0.15s linear;
+}
+
+.fade.in {
+	opacity: 1;
+}
+
 #header {
 	background-color: #4671D5;
 	color: white;
@@ -35,6 +65,12 @@ h1 {
 
 #header * {
 	display: inline;
+}
+
+#header input[type="text"] {
+	background-color: #6C8CD5;
+	border: none;
+	color: white;
 }
 
 #close_window_button {

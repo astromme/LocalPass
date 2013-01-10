@@ -14,16 +14,31 @@
     <script type="text/javascript" src="lib/sjcl/sjcl.min.js"></script>
     <script type="text/javascript" src="lib/sha1/sha1.js"></script>
     <script type="text/javascript" src="lib/pbkdf2/pbkdf2.js"></script>
+    <script type="text/javascript" src="lib/xml2json/xml2json.js"></script>
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl">
+
+  	<div ui-modal class="fade modal" ng-model="create_password_modal_visibile" id="create_password_modal">
+		<h2>Create a password for your database</h2>
+		<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
+			Password: <input type="password" ng-model="password" required><br />
+			Password (again): <input type="password" ng-model="password_again" required>
+			<span class="error"
+			      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+
+	 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
+	 	</form>
+	</div>
+
   	<div id="header">
 	  	<h1>LocalPass</h1>
-	  	<span id="database_name">{{database.name}}</span>
+	  	<input type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ng-hide="database == undefined" />
+		<button id="choose_file" ng-click="import()">Import</button>
 	  	<form ng-submit="unlock()"><input ng-show="isLocked()" value="Unlock" type="submit"></form>
 	  	<form ng-submit="lock()"><input ng-hide="isLocked()" value="Lock" type="submit"></form>
+	  	<form ng-submit="save()"><input value="Save" type="submit"></form>
 	  	<form ng-submit="new()"><input value="New" type="submit"></form>
-
 	  	<button id="close_window_button" ng-click="closeWindow()"></button>
 	</div>
 
@@ -55,7 +70,7 @@
 		  	</ul>
 		</div>
 
-	  	<form id="addEntryForm" ng-submit="addEntry()">
+	  	<form id="addEntryForm" ng-submit="addEntryClicked()">
 	  		<input type="text" ng-model="newEntryTitle" placeholder="add new entry here">
 	  		<input class="btn-primary" type="submit" value="add" style="display:none;">
 	  	</form>

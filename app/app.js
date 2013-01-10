@@ -29,6 +29,39 @@ function generate_guid()
         );
 }
 
+
+function errorHandler(e) {
+  console.error(e);
+}
+
+function readAsText(fileEntry, callback) {
+  fileEntry.file(function(file) {
+    var reader = new FileReader();
+
+    reader.onerror = errorHandler;
+    reader.onload = function(e) {
+      callback(e.target.result);
+    };
+
+    reader.readAsText(file);
+  });
+}
+
+function CreatePasswordControl($scope) {
+    $scope.password = '';
+    $scope.password_again = '';
+
+    $scope.verifyPasswordCreation = function() {
+        if ($scope.password != $scope.password_again) {
+            $scope.createPasswordForm.$setValidity('different', false);
+        } else {
+            $scope.createPasswordForm.$setValidity('different', true);
+            $scope.setPassword($scope.password, function() {$scope.save()});
+            $("#create_password_modal").modal('hide');
+        }
+    }
+}
+
 function DatabaseControl($scope) {
     $scope.database = undefined;
     $scope.derived_key = undefined;
@@ -69,12 +102,75 @@ function DatabaseControl($scope) {
     }
 
     $scope.load = function(database_uuid) {
-        $scope.database = chrome.storage.get(database_uuid);
+        $scope.database = chrome.storage.local.get(database_uuid);
     }
 
     $scope.save = function() {
+        if ($scope.derived_key == undefined) {
+            $("#create_password_modal").modal('show');
+            return;
+        }
+
         $scope.encrypt();
-        chrome.storage.set($scope.database.uuid, $scope.database);
+        //var data = { $scope.database.uuid : $scope.database };
+        chrome.storage.local.set(data);
+    }
+
+    $scope.import = function() {
+        // "type/*" mimetypes aren't respected. Explicitly use extensions for now.
+        // See crbug.com/145112.
+        var accepts = [{
+            //mimeTypes: ['text/*'],
+            extensions: ['js', 'css', 'txt', 'html', 'xml', 'tsv', 'csv', 'rtf']
+        }];
+
+        chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function(readOnlyEntry) {
+            if (!readOnlyEntry) {
+                return;
+            }
+
+            readOnlyEntry.file(function(file) {
+                readAsText(readOnlyEntry, function(result) {
+                    parser = new DOMParser();
+                    xmlDoc = parser.parseFromString(result,"text/xml");
+                    json = angular.fromJson(xml2json(xmlDoc, ''));
+
+                    $scope.new();
+
+                    var handleSubgroups = function(object, prefixString) {
+                        var groups = object.group;
+                        if (!groups) { return; }
+                        if (!groups.forEach) { groups = [groups]; };
+                        groups.forEach(function(group) {
+                            var entries = group.entry;
+                            if (!entries) { entries = Object({}) }
+                            if (!entries.forEach) { entries = [entries]; }
+                            entries.forEach(function(entry) {
+                                entry.tags = [prefixString + group.title];
+                                var db_entry = $scope.addEntry(entry.title, entry, true /*suppress updating search */);
+                                db_entry.creation = db_entry.contents.creation;
+                                db_entry.last_access = db_entry.contents.lastaccess;
+                                db_entry.last_modification = db_entry.contents.lastmod;
+                                delete db_entry.contents.creation;
+                                delete db_entry.contents.lastaccess;
+                                delete db_entry.contents.lastmod;
+                            });
+
+                            if (!(group.group === undefined)) {
+                                handleSubgroups(group, prefixString + group.title + '/');
+                            }
+                        });
+                    }
+
+                    handleSubgroups(json.database, '');
+
+                    $scope.$apply(function() {
+                        $scope.updateSearch();
+                    })
+                });
+
+            });
+        });
     }
 
     $scope.encrypt = function() {
@@ -90,6 +186,7 @@ function DatabaseControl($scope) {
         $scope.encrypt();
         $scope.unencrypted_root = undefined;
         $scope.database.selected_entry = undefined;
+        $scope.derived_key = undefined;
     }
 
     $scope.unlock = function() {
@@ -105,16 +202,27 @@ function DatabaseControl($scope) {
     $scope.isLocked = function() {
         return $scope.unencrypted_root == undefined;
     }
- 
-    $scope.addEntry = function() {
+
+    $scope.addEntry = function(title, contents, suppressUpdatingSearch) {
+        if (contents === undefined) { contents = Object({}) };
         var entry = Object({
             uuid: generate_guid(),
-            title: $scope.newEntryTitle,
-            contents: Object({})
+            title: title,
+            contents: contents
         });
         $scope.unencrypted_root.entries[entry.uuid] = entry;
+
+        if (!suppressUpdatingSearch) {
+            $scope.updateSearch();
+
+        }
+
+        return entry;
+    }
+ 
+    $scope.addEntryClicked = function() {
+        $scope.addEntry($scope.newEntryTitle);
         $scope.newEntryTitle = '';
-        $scope.updateSearch();
     };
 
     $scope.search = function(query) {
