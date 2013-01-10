@@ -138,7 +138,7 @@ h1 {
 }
 
 #main_content {
-	margin-left: 150px;
+	margin-left: 200px;
 	height: 100%;
 }
 
@@ -149,7 +149,7 @@ h1 {
 
 #left_sidebar {
 	float: left;
-	width: 150px;
+	width: 200px;
 	text-align: left;
 	position: absolute;
 	top: 30px;
