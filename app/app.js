@@ -11,6 +11,8 @@
     storage.
 */
 
+angular.module('localPass', ['ui']);
+
 function generate_guid()
 {
     var S4 = function ()
@@ -29,6 +31,38 @@ function generate_guid()
         );
 }
 
+Array.prototype.remove = function() {
+    var what, a = arguments, L = a.length, ax;
+    while (L && this.length) {
+        what = a[--L];
+        while ((ax = this.indexOf(what)) !== -1) {
+            this.splice(ax, 1);
+        }
+    }
+    return this;
+};
+
+/*
+angular.module('localpass.directive', []).directive('different', function() {
+  return {
+    require: 'ngModel',
+    link: function(scope, elm, attrs, ctrl) {
+      ctrl.$parsers.unshift(function(viewValue) {
+        if (INTEGER_REGEXP.test(viewValue)) {
+          // it is valid
+          ctrl.$setValidity('different', true);
+          return viewValue;
+        } else {
+          // it is invalid, return undefined (no model update)
+          ctrl.$setValidity('different', false);
+          return undefined;
+        }
+      });
+    }
+  };
+});
+
+*/
 
 function errorHandler(e) {
   console.error(e);
@@ -56,8 +90,15 @@ function CreatePasswordControl($scope) {
             $scope.createPasswordForm.$setValidity('different', false);
         } else {
             $scope.createPasswordForm.$setValidity('different', true);
-            $scope.setPassword($scope.password, function() {$scope.save()});
-            $("#create_password_modal").modal('hide');
+            $scope.setPassword($scope.password, function() {
+                $scope.$apply(function() {
+                    $scope.save()
+                    $scope.$parent.dbSelectionVisible = false;
+                    $scope.$parent.dbPasswordCreationScreenVisible = false;
+                    $scope.password = ''
+                    $scope.password_again = ''
+                });
+            });
         }
     }
 }
@@ -66,11 +107,15 @@ function EnterPasswordControl($scope) {
     $scope.password = '';
 
     $scope.verifyPassword = function() {
+        if ($scope.password.length = 0) {
+            $scope.enterPasswordForm.$setValidity('incorrect', true);
+            return;
+        }
+
         $scope.setPassword($scope.password, function() {
             if ($scope.decrypt()) {
                 $scope.enterPasswordForm.$setValidity('incorrect', false);
-                 $("#enter_password_modal").modal('hide');
-
+                $scope.password = '';
             } else {
                 $scope.enterPasswordForm.$setValidity('incorrect', true);
             }
@@ -79,6 +124,13 @@ function EnterPasswordControl($scope) {
 }
 
 function DatabaseControl($scope) {
+    $scope.dbSelectionVisible = true;
+    $scope.dbLockScreenVisible = false;
+    $scope.dbPasswordCreationScreenVisible = false;
+
+    $scope.databaseList = [];
+    $scope.databaseListSelection = undefined;
+    
     $scope.database = undefined;
     $scope.derived_key = undefined;
     $scope.selected_entry = undefined;
@@ -99,41 +151,73 @@ function DatabaseControl($scope) {
         var result_callback = function(key) {
             $scope.derived_key = key;
             $scope.status_message = '';
+            $scope.database.has_password = true;
             on_finished_callback();
         };
 
         mypbkdf2.deriveKey(status_callback, result_callback);
     }
 
+    $scope.loadDatabaseList = function(on_finished_callback) {
+        chrome.storage.sync.get('databases', function(items) {
+            if (!('databaseList' in items)) {
+                items['databaseList'] = [];
+            }
+
+            $scope.$apply(function() {
+                $scope.databaseList = databases;
+                //on_finished_callback();
+            });
+        });
+    }
+
+    $scope.saveDatabaseList = function(on_finished_callback) {
+        chrome.storage.sync.set({'databaseList' : $scope.databaseList }, on_finished_callback);
+    }
+
     $scope.new = function() {
         $scope.database = Object({
             'name' : 'Unamed Database',
             'uuid' : generate_guid(),
-            'encrypted_root' : undefined
+            'encrypted_root' : undefined,
         });
 
-        $scope.unencrypted_root = Object({
-            'entries' : {},
-        });
+        if ($scope.databaseListSelection && $scope.dbPasswordCreationScreenVisible) {
+            // this is a new db without a password, kill it
+            $scope.databaseList.remove($scope.databaseListSelection);
+        }
 
-        setTimeout(function() {
-            $('#database_name_entry')[0].select();
-        }, 0);
+        $scope.databaseList.push($scope.database.uuid);
+        $scope.databaseListSelection = $scope.database.uuid;
+        $scope.dbLockScreenVisible = false;
+        $scope.dbPasswordCreationScreenVisible = true;
     }
 
     $scope.load = function(database_uuid) {
-        $scope.database = chrome.storage.local.get(database_uuid);
+        chrome.storage.local.get(database_uuid, function(keys) {
+            $scope.database = keys[database_uuid];
+            $scope.unencrypted_root = undefined;
+            $scope.database.selected_entry = undefined;
+            $scope.derived_key = undefined;
+
+            $scope.$apply(function() {
+                $scope.dbLockScreenVisible = true;
+                $scope.dbPasswordCreationScreenVisible = false;
+            });
+        });
     }
 
     $scope.save = function() {
         if ($scope.derived_key == undefined) {
-            $("#create_password_modal").modal('show');
+            $scope.dbPasswordCreationScreenVisible = true;
             return;
         }
 
         $scope.encrypt();
-        //var data = { $scope.database.uuid : $scope.database };
+        var data = {};
+        data[$scope.database.uuid] = $scope.database;
         chrome.storage.local.set(data);
+        $scope.saveDatabaseList();
     }
 
     $scope.import = function() {
@@ -186,7 +270,7 @@ function DatabaseControl($scope) {
 
                     $scope.$apply(function() {
                         $scope.updateSearch();
-                    })
+                    });
                 });
 
             });
@@ -195,6 +279,11 @@ function DatabaseControl($scope) {
 
     $scope.encrypt = function() {
         $scope.editorToDatabase();
+        if ($scope.unencrypted_root === undefined) {
+            $scope.unencrypted_root = Object({
+                'entries' : {}
+            });
+        }
         var root = angular.copy($scope.unencrypted_root);
         delete root.filtered_entries;
         delete root.selected_entry;
@@ -211,8 +300,13 @@ function DatabaseControl($scope) {
         }
         $scope.$apply(function() {
             $scope.unencrypted_root = angular.fromJson(json);
+            if (!('entries' in $scope.unencrypted_root)) {
+                $scope.unencrypted_root['entries'] = {};
+            }
             $scope.databaseToEditor();
             $scope.updateSearch();
+            $scope.dbLockScreenVisible = false;
+            $scope.dbSelectionVisible = false;
         });
         return true;
     }
@@ -222,14 +316,8 @@ function DatabaseControl($scope) {
         $scope.unencrypted_root = undefined;
         $scope.database.selected_entry = undefined;
         $scope.derived_key = undefined;
-    }
-
-    $scope.unlock = function() {
-        if ($scope.database == undefined) {
-            return;
-        }
-
-        $("#enter_password_modal").modal('show');
+        $scope.dbLockScreenVisible = true;
+        $scope.dbSelectionVisible = true;
     }
 
     $scope.isLocked = function() {
@@ -305,5 +393,45 @@ function DatabaseControl($scope) {
         var uuid = $event.currentTarget.attributes['uuid'].value;
         $scope.database.selected_entry = uuid;
         $scope.databaseToEditor();
+    }
+
+    $scope.databaseEntryClicked = function($event) {
+        if ($scope.databaseListSelection && $scope.dbPasswordCreationScreenVisible) {
+            // this is a new db without a password, kill it
+            $scope.databaseList.remove($scope.databaseListSelection);
+        }
+
+        var uuid = $event.currentTarget.attributes['uuid'].value;
+        $scope.databaseListSelection = uuid;
+        $scope.load(uuid);
+        $event.currentTarget.focus();
+    }
+
+    $scope.entryCopy = function($event) {
+        console.log($event);
+    }
+
+    $scope.classForDatabaseSelectionWidget = function() {
+        if ($scope.dbSelectionVisible) {
+            return 'uiShowDatabaseSelectionWidget'
+        } else {
+            return 'uiHideDatabaseSelectionWidget'
+        }
+    }
+
+    $scope.classForDatabaseLockedWidget = function() {
+        if ($scope.dbLockScreenVisible) {
+            return 'uiShowDatabaseLockedWidget'
+        } else {
+            return 'uiHideDatabaseLockedWidget'
+        }
+    }
+
+    $scope.classForDatabasePasswordCreationWidget = function() {
+        if ($scope.dbPasswordCreationScreenVisible) {
+            return 'uiShowDatabaseLockedWidget'
+        } else {
+            return 'uiHideDatabaseLockedWidget'
+        }
     }
 }

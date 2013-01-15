@@ -18,64 +18,84 @@
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl">
-
-  	<div ui-modal class="fade modal" ng-model="create_password_modal_visibile" id="create_password_modal">
-		<h2>Create a password for your database</h2>
-		<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
-			Password: <input type="password" ng-model="password" required><br />
-			Password (again): <input type="password" ng-model="password_again" required>
-			<span class="error"
-			      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
-
-	 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
-	 	</form>
-	</div>
-
-	<div ui-modal class="fade modal" ng-model="enter_password_modal_visibile" id="enter_password_modal">
-		<h2>Enter the password for your database</h2>
-		<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
-			Password: <input type="password" ng-model="password" required>
-			<span class="error"
-			      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
-	 		<input type="submit" ng-click="verifyPassword()" name="Unlock">
-	 	</form>
-	</div>
-
   	<div id="header">
 	  	<h1>LocalPass</h1>
-	  	<input id="database_name_entry" type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ng-hide="database == undefined" />
+	  	<input id="database_name_entry" type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ui-keypress="$('#add_entry_input')[0].focus() on enter" ng-hide="database == undefined" />
 		<div class="buttonbox">
-			<button ng-click="new()">New</button>
-			<button ng-click="import()">Import</button>
-		  	<button ng-click="unlock()" ng-show="isLocked()">Unlock</button>
-		  	<button ng-click="save()">Save</button>
-		  	<button ng-click="lock()" ng-hide="isLocked()">Lock</button>
+			<button tabindex="2" ng-click="import()">Import</button>
+			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
+		  	<button tabindex="4" ng-click="save()">Save</button>
 		 </div>
 	  	<button id="close_window_button" ng-click="closeWindow()"></button>
 	</div>
 
 	<div id="content">
 	  	<div id="main_content">
+	  		<div id="database_password_creation_widget" ng-class="classForDatabasePasswordCreationWidget()">
+				<h2>Create a password for your database</h2>
+				<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
+					Password: <input type="password" ng-model="password" required><br />
+					Password (again): <input type="password" ng-model="password_again" required>
+					<span class="error"
+					      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+
+			 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
+			 	</form>
+  			</div>
+
+	  		<div id="database_locked_widget" ng-class="classForDatabaseLockedWidget()">
+				<h2>Enter the password for your database</h2>
+				<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
+					Password: <input type="password" ng-model="password" required>
+					<span class="error"
+					      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
+ 					<input type="submit" ng-click="verifyPassword()" name="Unlock">
+ 				</form>
+  			</div>
+
 		    <div id="jsoneditor"></div>
 	  	</div>
 	</div>
 
   	<div id="left_sidebar">
+  		<div id="database_selection_widget" ng-class="classForDatabaseSelectionWidget()">
+  			<h2>Databases</h2>
+
+		  	<ul name="databases">
+		  		<li ng-repeat="database_uuid in databaseList"
+		  		    uuid="{{database_uuid}}"
+		  		    ng-class="{selected: database_uuid==databaseListSelection}"
+		  		    ng-class-odd="'odd'"
+		  		    ng-class-even="'even'"
+		  		    ng-mousedown="databaseEntryClicked($event)">
+		  			<span class="databaseEntry">{{database_uuid}}</span>
+		  		</li>
+		  	</ul>
+
+		  	<button ng-click="new()">New</button>
+  		</div>
+
 	  	<div id="entries_searchbox_container">
 	  		<input id="entries_searchbox"
+	  			   tabindex="5"
 	  		       class="searchbox"
 	  		       ng-model="searchString"
 	  		       ng-change="updateSearch()"
 	  		       placeholder="search..."></input>
+	  		<button id="clear_search_button" ng-click="searchString = ''" ng-show="searchString.length > 0"></button>
 	  	</div>
 
 	 	<div id="entries_list">
-		  	<ul name="entries" size=5>
+		  	<ul name="entries">
 		  		<li ng-repeat="entry in unencrypted_root.filtered_entries"
+		  		    tabindex="6"
 		  		    uuid="{{entry.uuid}}"
 		  		    ng-class="{selected: entry.uuid==database.selected_entry}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
+		  		    ui-keydown="{ ctrl-c : 'entryCopy($event)',
+		  		                   down: 'database.selected_entry += 1',
+		  		                   up: 'database.selected_entry -= 1'}"
 		  		    ng-mousedown="entryClicked($event)">
 		  			<span class="entry">{{entry.title}}</span>
 		  		</li>
@@ -84,7 +104,7 @@
 
 		<div id="add_entry_form_container">
 		  	<form ng-submit="addEntryClicked()">
-		  		<input id="add_entry_input" type="text" ng-model="newEntryTitle" placeholder="add new entry here">
+		  		<input tabindex="7" id="add_entry_input" type="text" ng-model="newEntryTitle" placeholder="add new entry here">
 		  		<input class="btn-primary" type="submit" value="add" style="display:none;">
 		  	</form>
 	  	</div>
