@@ -159,13 +159,13 @@ function DatabaseControl($scope) {
     }
 
     $scope.loadDatabaseList = function(on_finished_callback) {
-        chrome.storage.sync.get('databases', function(items) {
+        chrome.storage.sync.get('databaseList', function(items) {
             if (!('databaseList' in items)) {
                 items['databaseList'] = [];
             }
 
             $scope.$apply(function() {
-                $scope.databaseList = databases;
+                $scope.databaseList = items['databaseList'];
                 //on_finished_callback();
             });
         });
@@ -312,7 +312,7 @@ function DatabaseControl($scope) {
     }
 
     $scope.lock = function() {
-        $scope.encrypt();
+        $scope.save();
         $scope.unencrypted_root = undefined;
         $scope.database.selected_entry = undefined;
         $scope.derived_key = undefined;
