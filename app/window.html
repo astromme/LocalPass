@@ -20,7 +20,7 @@
   <body ng-controller="DatabaseControl" ng-init="loadDatabaseList()">
   	<div id="header">
 	  	<h1>LocalPass</h1>
-	  	<input id="database_name_entry" type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ui-keypress="$('#add_entry_input')[0].focus() on enter" ng-hide="database == undefined" />
+	  	<input id="database_name_entry" type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ui-keypress="$('#add_entry_input')[0].focus() on enter" ng-hide="(database == undefined) || dbSelectionVisible" />
 		<div class="buttonbox">
 			<button tabindex="2" ng-click="import()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
