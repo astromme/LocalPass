@@ -2,14 +2,164 @@
     Database: {
         uuid (string)
         name (string)
-        selected_entry (integer)
+        selected_entry (EntryUUID)
         encrypted_root (encrypted json)
     }
 
     It is important to never store the unencrypted root within the database
     structure to ensure that it never gets inadvertently saved to permanant
     storage.
+
+
+    decrypted_root {
+        entries : {} (keys: entry UUIDs; values: object UUIDs)
+        objects : {} (keys: object UUIDs; values: objects)
+    }
+
+    EntryUUID (string)
+    ObjectUUID (string)
+
+    Object {
+        uuid : ObjectUUID
+        previous_state_uuid : ObjectUUID
+        title : string
+        contents : Object({});
+    }
+
+    Going back in history is the same as walking down the previous states
+    and looking them up in the objects mapping
+
 */
+
+var example_database = Object({
+    uuid: 'database1',
+    name: 'Testing DB',
+    selected_entry: null,
+    encrypted_root: 
+
+});
+
+var test_root_base = Object({
+    objects : {
+        object1_old : {
+            uuid: 'object1_old',
+            previous_state_uuid: null,
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing2'
+            }
+        }
+        object2 : {
+            uuid: 'object2',
+            previous_state_uuid: null,
+            title: 'Second Object'
+        }
+    }
+    entries : {
+        entry1:'object1_old',
+        entry2:'object2'
+    }
+});
+
+var test_root_unconflicted = Object({
+    objects : {
+        object1 : {
+            uuid : 'object1',
+            previus_state_uuid : 'object1_old',
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing1'
+            }
+
+        },
+        object1_old : {
+            uuid: 'object1_old',
+            previous_state_uuid: null,
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing2'
+            }
+        }
+        object2 : {
+            uuid: 'object2',
+            previous_state_uuid: null,
+            title: 'Second Object'
+        }
+    }
+    entries : {
+        entry1:'object1',
+        entry2:'object2'
+    }
+});
+
+var test_root_conflicted_left = Object({
+    objects : {
+        object1 : {
+            uuid : 'object1_left',
+            previus_state_uuid : 'object1_old',
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing1_left'
+            }
+
+        },
+        object1_old : {
+            uuid: 'object1_old',
+            previous_state_uuid: null,
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing2'
+            }
+        }
+        object2 : {
+            uuid: 'object2',
+            previous_state_uuid: null,
+            title: 'Second Object'
+        }
+    }
+    entries : {
+        entry1:'object1',
+        entry2:'object2'
+    }
+});
+
+var test_root_conflicted_right = Object({
+    objects : {
+        object1 : {
+            uuid : 'object1_right',
+            previus_state_uuid : 'object1_old',
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing1_right'
+            }
+
+        },
+        object1_old : {
+            uuid: 'object1_old',
+            previous_state_uuid: null,
+            title: 'First Object',
+            contents: {
+                username: 'astromme',
+                password: 'testing2'
+            }
+        }
+        object2 : {
+            uuid: 'object2',
+            previous_state_uuid: null,
+            title: 'Second Object'
+        }
+    }
+    entries : {
+        entry1:'object1_right',
+        entry2:'object2'
+    }
+});
 
 angular.module('localPass', ['ui']);
 
@@ -363,6 +513,18 @@ function DatabaseControl($scope) {
 
         $scope.unencrypted_root.objects[new_object.uuid] = new_object;
         $scope.unencrypted_root.entries[entryUUID] = new_object.uuid;
+    }
+
+    $scope.deterministicallySolveConflict = function(left, right) {
+        var winner;
+        var looser;
+        if (left.uuid > right.uuid) {
+            winner = left;
+            looser = right;
+        } else {
+            winner = right;
+            looser = left;
+        }
     }
 
     $scope.addEntryClicked = function() {
