@@ -92,7 +92,7 @@ function CreatePasswordControl($scope) {
             $scope.createPasswordForm.$setValidity('different', true);
             $scope.setPassword($scope.password, function() {
                 $scope.$apply(function() {
-                    $scope.save()
+                    $scope.save();
 
                     var config = {
                         'config': {
@@ -150,6 +150,9 @@ function DatabaseControl($scope) {
             if (config === undefined) {
                 console.log('config is undefined, assuming fresh state');
                 $scope.new();
+
+                $scope.setHidden('dbLockScreenClass');
+                $scope.setVisible('dbPasswordCreationScreenClass');
                 return;
             }
 
@@ -186,9 +189,6 @@ function DatabaseControl($scope) {
             'uuid' : generate_guid(),
             'encrypted_root' : undefined,
         });
-
-        $scope.setHidden('dbLockScreenClass');
-        $scope.setVisible('dbPasswordCreationScreenClass');
     }
 
     $scope.load = function(database_uuid) {
@@ -247,6 +247,7 @@ function DatabaseControl($scope) {
                             if (!entries) { entries = Object({}) }
                             if (!entries.forEach) { entries = [entries]; }
                             entries.forEach(function(entry) {
+                                //TODO: update for new entry/object system
                                 entry.tags = [prefixString + group.title];
                                 var db_entry = $scope.addEntry(entry.title, entry, true /*suppress updating search */);
                                 db_entry.creation = db_entry.contents.creation;
@@ -278,7 +279,8 @@ function DatabaseControl($scope) {
         $scope.editorToDatabase();
         if ($scope.unencrypted_root === undefined) {
             $scope.unencrypted_root = Object({
-                'entries' : {}
+                'entries' : {},
+                'objects' : {}
             });
         }
         var root = angular.copy($scope.unencrypted_root);
@@ -297,8 +299,13 @@ function DatabaseControl($scope) {
         }
         $scope.$apply(function() {
             $scope.unencrypted_root = angular.fromJson(json);
+
+            //TODO: cleanup so that this only exists in one place (see $scope.encrypt())
             if (!('entries' in $scope.unencrypted_root)) {
                 $scope.unencrypted_root['entries'] = {};
+            }
+            if (!('objects' in $scope.unencrypted_root)) {
+                $scope.unencrypted_root['objects'] = {};
             }
             $scope.databaseToEditor();
             $scope.updateSearch();
@@ -321,48 +328,79 @@ function DatabaseControl($scope) {
         return $scope.unencrypted_root == undefined;
     }
 
-    $scope.addEntry = function(title, contents, suppressUpdatingSearch) {
+    $scope.createNewEntry = function(title, contents, suppressUpdatingSearch) {
         if (contents === undefined) { contents = Object({}) };
-        var entry = Object({
+        var object = Object({
             uuid: generate_guid(),
+            previous_state_uuid : null,
             title: title,
             contents: contents
         });
-        $scope.unencrypted_root.entries[entry.uuid] = entry;
+
+        var entry_uuid = generate_guid();
+
+        $scope.unencrypted_root.objects[object.uuid] = object;
+        $scope.unencrypted_root.entries[entry_uuid] = object.uuid;
 
         if (!suppressUpdatingSearch) {
             $scope.updateSearch();
-
         }
 
-        return entry;
+        return object;
     }
- 
+
+    $scope.updateEntry = function(entryUUID, differences) {
+        var old_object_uuid = $scope.unencrypted_root.entries[entryUUID];
+        var old_object = $scope.unencrypted_root.objects[old_object_uuid];
+        var new_object = angular.copy(old_object);
+
+        for (key in differences) {
+            new_object[key] = differences[key];
+        }
+
+        new_object.uuid = generate_guid();
+        new_object.old_object_uuid = old_object_uuid;
+
+        $scope.unencrypted_root.objects[new_object.uuid] = new_object;
+        $scope.unencrypted_root.entries[entryUUID] = new_object.uuid;
+    }
+
     $scope.addEntryClicked = function() {
-        $scope.addEntry($scope.newEntryTitle);
+        $scope.createNewEntry($scope.newEntryTitle);
         $scope.newEntryTitle = '';
-    };
+
+        console.log($scope.unencrypted_root);
+    }
+
+    $scope.entry = function(uuid) {
+        var object_uuid = $scope.unencrypted_root.entries[uuid];
+        return $scope.unencrypted_root.objects[object_uuid];
+    }
 
     $scope.search = function(query) {
         var results = [];
         if (!query) {
             for (uuid in $scope.unencrypted_root.entries) {
-                results.push($scope.unencrypted_root.entries[uuid]);
+                var object_uuid = $scope.unencrypted_root.entries[uuid];
+                results.push(new Object({'uuid':uuid,
+                                         'object': $scope.unencrypted_root.objects[object_uuid]}));
             }
         } else {
             var search = query.toLowerCase();
 
             for (uuid in $scope.unencrypted_root.entries) {
-                var entry = $scope.unencrypted_root.entries[uuid];
-                var field = String(entry.title).toLowerCase();
+                var object = $scope.entry(uuid);
+                var field = String(object.title).toLowerCase();
                 index = field.indexOf(search);
                 if (index != -1) {
-                    results.push(entry);
+                    results.push(new Object({'uuid':uuid, 'object':object}));
                 }
             }
         }
 
         results.sort();
+        console.log('results:');
+        console.log(results);
         $scope.selected_entry = undefined;
         $scope.unencrypted_root.filtered_entries = results;
     }
@@ -373,13 +411,13 @@ function DatabaseControl($scope) {
 
     $scope.editorToDatabase = function() {
         if ($scope.database.selected_entry != undefined) {
-            $scope.unencrypted_root.entries[$scope.database.selected_entry].contents = $scope.editor.get();
+            $scope.updateEntry($scope.database.selected_entry, {'contents': $scope.editor.get() });
         }
     }
 
     $scope.databaseToEditor = function() {
         if ($scope.database.selected_entry != undefined) {
-            $scope.editor.set($scope.unencrypted_root.entries[$scope.database.selected_entry].contents);
+            $scope.editor.set($scope.entry($scope.database.selected_entry).contents);
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
