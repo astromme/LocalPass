@@ -17,64 +17,50 @@
     <script type="text/javascript" src="lib/xml2json/xml2json.js"></script>
     <script type="text/javascript" src="app.js"></script>
   </head>
-  <body ng-controller="DatabaseControl" ng-init="loadDatabaseList()">
+  <body ng-controller="DatabaseControl" ng-init="init()">
   	<div id="header">
 	  	<h1>LocalPass</h1>
-	  	<input id="database_name_entry" type="text" ng-model="database.name" ng-click="$event.currentTarget.select()" ui-keypress="$('#add_entry_input')[0].focus() on enter" ng-hide="(database == undefined) || dbSelectionVisible" />
+	  	<span>{{status_message}}</span>
 		<div class="buttonbox">
-			<button tabindex="2" ng-click="import()">Import</button>
+			<button tabindex="2" ng-click="import()" ng-hide="isLocked()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
-		  	<button tabindex="4" ng-click="save()">Save</button>
+		  	<button tabindex="4" ng-click="save()" ng-hide="isLocked()">Save</button>
 		 </div>
 	  	<button id="close_window_button" ng-click="closeWindow()"></button>
 	</div>
 
+	<div id="database_password_creation_widget"
+	     ng-class="dbPasswordCreationScreenClass">
+		<h2>Create a password for your database</h2>
+		<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
+			Password: <input type="password" ng-model="password" required><br />
+			Password (again): <input type="password" ng-model="password_again" required>
+			<span class="error"
+			      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+
+	 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
+	 	</form>
+	</div>
+
+	<div id="database_locked_widget"
+	     ng-class="dbLockScreenClass">
+		<h2>Enter the password for your database</h2>
+		<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
+			Password: <input type="password" ng-model="password" required>
+			<span class="error"
+			      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
+			<input type="submit" ng-click="verifyPassword()" name="Unlock">
+		</form>
+	</div>
+
+
 	<div id="content">
 	  	<div id="main_content">
-	  		<div id="database_password_creation_widget" ng-class="classForDatabasePasswordCreationWidget()">
-				<h2>Create a password for your database</h2>
-				<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
-					Password: <input type="password" ng-model="password" required><br />
-					Password (again): <input type="password" ng-model="password_again" required>
-					<span class="error"
-					      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
-
-			 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
-			 	</form>
-  			</div>
-
-	  		<div id="database_locked_widget" ng-class="classForDatabaseLockedWidget()">
-				<h2>Enter the password for your database</h2>
-				<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
-					Password: <input type="password" ng-model="password" required>
-					<span class="error"
-					      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
- 					<input type="submit" ng-click="verifyPassword()" name="Unlock">
- 				</form>
-  			</div>
-
 		    <div id="jsoneditor"></div>
 	  	</div>
 	</div>
 
   	<div id="left_sidebar">
-  		<div id="database_selection_widget" ng-class="classForDatabaseSelectionWidget()">
-  			<h2>Databases</h2>
-
-		  	<ul name="databases">
-		  		<li ng-repeat="database_uuid in databaseList"
-		  		    uuid="{{database_uuid}}"
-		  		    ng-class="{selected: database_uuid==databaseListSelection}"
-		  		    ng-class-odd="'odd'"
-		  		    ng-class-even="'even'"
-		  		    ng-mousedown="databaseEntryClicked($event)">
-		  			<span class="databaseEntry">{{database_uuid}}</span>
-		  		</li>
-		  	</ul>
-
-		  	<button ng-click="new()">New</button>
-  		</div>
-
 	  	<div id="entries_searchbox_container">
 	  		<input id="entries_searchbox"
 	  			   tabindex="5"

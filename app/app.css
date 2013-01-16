@@ -62,15 +62,6 @@ h1 {
 	display: inline;
 }
 
-#header input[type="text"] {
-	background-color: #6C8CD5;
-	border: none;
-	color: white;
-}
-
-#header #title_container {
-
-}
 
 #header h1 {
 	font-size: 25px;
@@ -81,15 +72,6 @@ h1 {
 	line-height: 30px;
 	margin: 0 3px 0 3px;
 	padding: 0;
-}
-
-#header input {
-	display: inline-block;
-	vertical-align: middle;
-	text-align: center;
-	margin: 0 3px 0 3px;
-	padding: 0;
-	width: auto;
 }
 
 #header .buttonbox {
@@ -162,8 +144,8 @@ h1 {
 	clear: none;
 }
 
-.uiShowDatabaseLockedWidget {
-	top: 0px;
+.shown {
+	top: 30px;
 	bottom: 0px;
 	right: 0;
 	left: 0;
@@ -171,12 +153,21 @@ h1 {
 	-webkit-transition: all 0.3s ease;
 }
 
-.uiHideDatabaseLockedWidget {
-	top: 0px;
+.hiddenBelow {
+	top: 100%;
 	bottom: 0px;
 	right: 0;
-	left: 100%;
-	margin-left: 100%;
+	left: 0;
+
+	-webkit-transition: all 0.3s ease;
+}
+
+.hiddenAbove {
+	top: 30px;
+	bottom: -100%;
+	right: 0;
+	left: 0;
+
 	-webkit-transition: all 0.3s ease;
 }
 
@@ -210,18 +201,6 @@ h1 {
 	clear: none;
 	top: 0px;
 	bottom: 0px;
-}
-
-.uiShowDatabaseSelectionWidget {
-	right: 0;
-	left: 0;
-	-webkit-transition: all 0.3s ease;
-}
-
-.uiHideDatabaseSelectionWidget {
-	right: 20px;
-	left: -100%;
-	-webkit-transition: all 0.3s ease;
 }
 
 #entries_list {

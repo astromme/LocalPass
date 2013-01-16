@@ -93,10 +93,19 @@ function CreatePasswordControl($scope) {
             $scope.setPassword($scope.password, function() {
                 $scope.$apply(function() {
                     $scope.save()
-                    $scope.$parent.dbSelectionVisible = false;
-                    $scope.$parent.dbPasswordCreationScreenVisible = false;
-                    $scope.password = ''
-                    $scope.password_again = ''
+
+                    var config = {
+                        'config': {
+                            'database_uuid' : $scope.database.uuid
+                        }
+                    };
+
+                    chrome.storage.sync.set(config, function() {
+                        $scope.setHidden('dbLockScreenClass');
+                        $scope.setHidden('dbPasswordCreationScreenClass');
+                        $scope.password = ''
+                        $scope.password_again = ''
+                    });
                 });
             });
         }
@@ -124,12 +133,8 @@ function EnterPasswordControl($scope) {
 }
 
 function DatabaseControl($scope) {
-    $scope.dbSelectionVisible = true;
-    $scope.dbLockScreenVisible = false;
-    $scope.dbPasswordCreationScreenVisible = false;
-
-    $scope.databaseList = [];
-    $scope.databaseListSelection = undefined;
+    $scope.dbLockScreenClass = 'hiddenBelow';
+    $scope.dbPasswordCreationScreenClass = 'shown';
     
     $scope.database = undefined;
     $scope.derived_key = undefined;
@@ -137,6 +142,22 @@ function DatabaseControl($scope) {
     $scope.editor = new JSONEditor(document.getElementById("jsoneditor"));
     $scope.status_message = ''; // shown to the user as feedback
     
+
+    $scope.init = function() {
+        chrome.storage.sync.get(null, function(items) {
+            var config = items['config'];
+
+            if (config === undefined) {
+                console.log('config is undefined, assuming fresh state');
+                $scope.new();
+                return;
+            }
+
+            $scope.load(config['database_uuid']);
+
+        });
+    }
+
     $scope.closeWindow = function() {
         window.close();
     }
@@ -158,22 +179,6 @@ function DatabaseControl($scope) {
         mypbkdf2.deriveKey(status_callback, result_callback);
     }
 
-    $scope.loadDatabaseList = function(on_finished_callback) {
-        chrome.storage.sync.get('databaseList', function(items) {
-            if (!('databaseList' in items)) {
-                items['databaseList'] = [];
-            }
-
-            $scope.$apply(function() {
-                $scope.databaseList = items['databaseList'];
-                //on_finished_callback();
-            });
-        });
-    }
-
-    $scope.saveDatabaseList = function(on_finished_callback) {
-        chrome.storage.sync.set({'databaseList' : $scope.databaseList }, on_finished_callback);
-    }
 
     $scope.new = function() {
         $scope.database = Object({
@@ -182,15 +187,8 @@ function DatabaseControl($scope) {
             'encrypted_root' : undefined,
         });
 
-        if ($scope.databaseListSelection && $scope.dbPasswordCreationScreenVisible) {
-            // this is a new db without a password, kill it
-            $scope.databaseList.remove($scope.databaseListSelection);
-        }
-
-        $scope.databaseList.push($scope.database.uuid);
-        $scope.databaseListSelection = $scope.database.uuid;
-        $scope.dbLockScreenVisible = false;
-        $scope.dbPasswordCreationScreenVisible = true;
+        $scope.setHidden('dbLockScreenClass');
+        $scope.setVisible('dbPasswordCreationScreenClass');
     }
 
     $scope.load = function(database_uuid) {
@@ -201,15 +199,15 @@ function DatabaseControl($scope) {
             $scope.derived_key = undefined;
 
             $scope.$apply(function() {
-                $scope.dbLockScreenVisible = true;
-                $scope.dbPasswordCreationScreenVisible = false;
+                $scope.setVisible('dbLockScreenClass');
+                $scope.setHidden('dbPasswordCreationScreenClass');
             });
         });
     }
 
     $scope.save = function() {
         if ($scope.derived_key == undefined) {
-            $scope.dbPasswordCreationScreenVisible = true;
+            $scope.setVisible('dbPasswordCreationScreenClass');
             return;
         }
 
@@ -217,7 +215,6 @@ function DatabaseControl($scope) {
         var data = {};
         data[$scope.database.uuid] = $scope.database;
         chrome.storage.local.set(data);
-        $scope.saveDatabaseList();
     }
 
     $scope.import = function() {
@@ -305,7 +302,7 @@ function DatabaseControl($scope) {
             }
             $scope.databaseToEditor();
             $scope.updateSearch();
-            $scope.dbLockScreenVisible = false;
+            $scope.setHidden('dbLockScreenClass');
             $scope.dbSelectionVisible = false;
         });
         return true;
@@ -316,7 +313,7 @@ function DatabaseControl($scope) {
         $scope.unencrypted_root = undefined;
         $scope.database.selected_entry = undefined;
         $scope.derived_key = undefined;
-        $scope.dbLockScreenVisible = true;
+        $scope.setVisible('dbLockScreenClass');
         $scope.dbSelectionVisible = true;
     }
 
@@ -395,43 +392,16 @@ function DatabaseControl($scope) {
         $scope.databaseToEditor();
     }
 
-    $scope.databaseEntryClicked = function($event) {
-        if ($scope.databaseListSelection && $scope.dbPasswordCreationScreenVisible) {
-            // this is a new db without a password, kill it
-            $scope.databaseList.remove($scope.databaseListSelection);
-        }
-
-        var uuid = $event.currentTarget.attributes['uuid'].value;
-        $scope.databaseListSelection = uuid;
-        $scope.load(uuid);
-        $event.currentTarget.focus();
-    }
-
     $scope.entryCopy = function($event) {
         console.log($event);
     }
 
-    $scope.classForDatabaseSelectionWidget = function() {
-        if ($scope.dbSelectionVisible) {
-            return 'uiShowDatabaseSelectionWidget'
-        } else {
-            return 'uiHideDatabaseSelectionWidget'
-        }
+    $scope.setVisible = function(variable) {
+        $scope[variable] = 'shown';
     }
 
-    $scope.classForDatabaseLockedWidget = function() {
-        if ($scope.dbLockScreenVisible) {
-            return 'uiShowDatabaseLockedWidget'
-        } else {
-            return 'uiHideDatabaseLockedWidget'
-        }
+    $scope.setHidden = function(variable) {
+        $scope[variable] = 'hiddenBelow';
     }
 
-    $scope.classForDatabasePasswordCreationWidget = function() {
-        if ($scope.dbPasswordCreationScreenVisible) {
-            return 'uiShowDatabaseLockedWidget'
-        } else {
-            return 'uiHideDatabaseLockedWidget'
-        }
-    }
 }
