@@ -1,166 +1,3 @@
-/*
-    Database: {
-        uuid (string)
-        name (string)
-        selected_entry (EntryUUID)
-        encrypted_root (encrypted json)
-    }
-
-    It is important to never store the unencrypted root within the database
-    structure to ensure that it never gets inadvertently saved to permanant
-    storage.
-
-
-    decrypted_root {
-        entries : {} (keys: entry UUIDs; values: object UUIDs)
-        objects : {} (keys: object UUIDs; values: objects)
-    }
-
-    EntryUUID (string)
-    ObjectUUID (string)
-
-    Object {
-        uuid : ObjectUUID
-        previous_state_uuid : ObjectUUID
-        title : string
-        contents : Object({});
-    }
-
-    Going back in history is the same as walking down the previous states
-    and looking them up in the objects mapping
-
-*/
-
-var example_database = Object({
-    uuid: 'database1',
-    name: 'Testing DB',
-    selected_entry: null,
-    encrypted_root: 
-
-});
-
-var test_root_base = Object({
-    objects : {
-        object1_old : {
-            uuid: 'object1_old',
-            previous_state_uuid: null,
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing2'
-            }
-        }
-        object2 : {
-            uuid: 'object2',
-            previous_state_uuid: null,
-            title: 'Second Object'
-        }
-    }
-    entries : {
-        entry1:'object1_old',
-        entry2:'object2'
-    }
-});
-
-var test_root_unconflicted = Object({
-    objects : {
-        object1 : {
-            uuid : 'object1',
-            previus_state_uuid : 'object1_old',
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing1'
-            }
-
-        },
-        object1_old : {
-            uuid: 'object1_old',
-            previous_state_uuid: null,
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing2'
-            }
-        }
-        object2 : {
-            uuid: 'object2',
-            previous_state_uuid: null,
-            title: 'Second Object'
-        }
-    }
-    entries : {
-        entry1:'object1',
-        entry2:'object2'
-    }
-});
-
-var test_root_conflicted_left = Object({
-    objects : {
-        object1 : {
-            uuid : 'object1_left',
-            previus_state_uuid : 'object1_old',
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing1_left'
-            }
-
-        },
-        object1_old : {
-            uuid: 'object1_old',
-            previous_state_uuid: null,
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing2'
-            }
-        }
-        object2 : {
-            uuid: 'object2',
-            previous_state_uuid: null,
-            title: 'Second Object'
-        }
-    }
-    entries : {
-        entry1:'object1',
-        entry2:'object2'
-    }
-});
-
-var test_root_conflicted_right = Object({
-    objects : {
-        object1 : {
-            uuid : 'object1_right',
-            previus_state_uuid : 'object1_old',
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing1_right'
-            }
-
-        },
-        object1_old : {
-            uuid: 'object1_old',
-            previous_state_uuid: null,
-            title: 'First Object',
-            contents: {
-                username: 'astromme',
-                password: 'testing2'
-            }
-        }
-        object2 : {
-            uuid: 'object2',
-            previous_state_uuid: null,
-            title: 'Second Object'
-        }
-    }
-    entries : {
-        entry1:'object1_right',
-        entry2:'object2'
-    }
-});
-
 angular.module('localPass', ['ui']);
 
 function generate_guid()
@@ -241,16 +78,8 @@ function CreatePasswordControl($scope) {
         } else {
             $scope.createPasswordForm.$setValidity('different', true);
             $scope.setPassword($scope.password, function() {
-                $scope.$apply(function() {
-                    $scope.save();
-
-                    var config = {
-                        'config': {
-                            'database_uuid' : $scope.database.uuid
-                        }
-                    };
-
-                    chrome.storage.sync.set(config, function() {
+                $scope.updateCache(function(err) {
+                    $scope.$apply(function() {
                         $scope.setHidden('dbLockScreenClass');
                         $scope.setHidden('dbPasswordCreationScreenClass');
                         $scope.password = ''
@@ -272,12 +101,17 @@ function EnterPasswordControl($scope) {
         }
 
         $scope.setPassword($scope.password, function() {
-            if ($scope.decrypt()) {
-                $scope.enterPasswordForm.$setValidity('incorrect', false);
+            $scope.updateCache(function(err) {
+                if (err) {
+                    $scope.enterPasswordForm.$setValidity('incorrect', true);
+                    return;
+                }
+
                 $scope.password = '';
-            } else {
-                $scope.enterPasswordForm.$setValidity('incorrect', true);
-            }
+                $scope.enterPasswordForm.$setValidity('incorrect', false);
+                $scope.setHidden('dbLockScreenClass');
+                $scope.setHidden('dbPasswordCreationScreenClass');
+            });
         });
     }
 }
@@ -287,33 +121,61 @@ function DatabaseControl($scope) {
     $scope.dbPasswordCreationScreenClass = 'shown';
     
     $scope.database = undefined;
-    $scope.derived_key = undefined;
-    $scope.selected_entry = undefined;
+    $scope.decrypted = undefined;
+
     $scope.editor = new JSONEditor(document.getElementById("jsoneditor"));
     $scope.status_message = ''; // shown to the user as feedback
     
 
     $scope.init = function() {
-        chrome.storage.sync.get(null, function(items) {
-            var config = items['config'];
+        Pouch('idb://local_database', function(err, db) {
+            $scope.database = db;
 
-            if (config === undefined) {
-                console.log('config is undefined, assuming fresh state');
-                $scope.new();
+            $scope.database.get('config', function(err, doc) {
+                if (err) {
+                    console.log('config is undefined, assuming fresh state');
 
-                $scope.setHidden('dbLockScreenClass');
-                $scope.setVisible('dbPasswordCreationScreenClass');
-                return;
-            }
+                    var config = {
+                        _id : 'config',
+                        uuid : generate_guid(),
+                    }
 
-            $scope.load(config['database_uuid']);
+                    $scope.database.put(config, function(err, response) {
+                        $scope.setHidden('dbLockScreenClass');
+                        $scope.setVisible('dbPasswordCreationScreenClass');
+                    });
+                    $scope.initializeDecryptedSection();
 
+                } else { // success
+                    $scope.initializeDecryptedSection();
+
+                    $scope.$apply(function() {
+                        $scope.setVisible('dbLockScreenClass');
+                        $scope.setHidden('dbPasswordCreationScreenClass');
+                    });
+                }
+            });
         });
+
+        //TODO: have credentials stored in chrome.storage.sync
+        //chrome.storage.sync.get(null, function(items) {});
+        //var config = items['config'];
     }
 
     $scope.closeWindow = function() {
         window.close();
     }
+
+    $scope.initializeDecryptedSection = function() {
+        $scope.decryptedSection = Object();
+
+        $scope.decryptedSection.derived_key = undefined;
+
+        $scope.decryptedSection.selected_entry = undefined;
+        $scope.decryptedSection.selected_entry_id = undefined;
+
+        $scope.decryptedSection.cache = {};
+    } 
 
     // Async. Notifies when finished via on_finished_callback
     $scope.setPassword = function(password, on_finished_callback) {
@@ -323,48 +185,12 @@ function DatabaseControl($scope) {
             $scope.status_message = percent_done + "%"};
 
         var result_callback = function(key) {
-            $scope.derived_key = key;
+            $scope.decryptedSection.derived_key = key;
             $scope.status_message = '';
-            $scope.database.has_password = true;
             on_finished_callback();
         };
 
         mypbkdf2.deriveKey(status_callback, result_callback);
-    }
-
-
-    $scope.new = function() {
-        $scope.database = Object({
-            'name' : 'Unamed Database',
-            'uuid' : generate_guid(),
-            'encrypted_root' : undefined,
-        });
-    }
-
-    $scope.load = function(database_uuid) {
-        chrome.storage.local.get(database_uuid, function(keys) {
-            $scope.database = keys[database_uuid];
-            $scope.unencrypted_root = undefined;
-            $scope.database.selected_entry = undefined;
-            $scope.derived_key = undefined;
-
-            $scope.$apply(function() {
-                $scope.setVisible('dbLockScreenClass');
-                $scope.setHidden('dbPasswordCreationScreenClass');
-            });
-        });
-    }
-
-    $scope.save = function() {
-        if ($scope.derived_key == undefined) {
-            $scope.setVisible('dbPasswordCreationScreenClass');
-            return;
-        }
-
-        $scope.encrypt();
-        var data = {};
-        data[$scope.database.uuid] = $scope.database;
-        chrome.storage.local.set(data);
     }
 
     $scope.import = function() {
@@ -425,132 +251,101 @@ function DatabaseControl($scope) {
         });
     }
 
-    $scope.encrypt = function() {
-        $scope.editorToDatabase();
-        if ($scope.unencrypted_root === undefined) {
-            $scope.unencrypted_root = Object({
-                'entries' : {},
-                'objects' : {}
-            });
-        }
-        var root = angular.copy($scope.unencrypted_root);
-        delete root.filtered_entries;
-        delete root.selected_entry;
-        var json = angular.toJson(root);
-        $scope.database.encrypted_root = sjcl.encrypt($scope.derived_key, json);
+    $scope.updateRemoteDatabase = function() {
+        //TODO: Implement
     }
 
-    $scope.decrypt = function() {
+    $scope.replicateLocalToRemote = function() {
+        //TODO: Implement
+    }
+
+    $scope.encrypt = function(data) {
+        var json = angular.toJson(data);
+        return sjcl.encrypt($scope.decryptedSection.derived_key, json);
+    }
+
+    $scope.decrypt = function(data) {
+        console.log(data);
         try {
-            var json = sjcl.decrypt($scope.derived_key, $scope.database.encrypted_root);
+            var json = sjcl.decrypt($scope.decryptedSection.derived_key, data);
         } catch(e) {
-            console.log("$scope.decrypt() Error when decrypting database: " + e);
+            console.log("$scope.decrypt() Error when decrypting data: " + e);
             return false;
         }
-        $scope.$apply(function() {
-            $scope.unencrypted_root = angular.fromJson(json);
 
-            //TODO: cleanup so that this only exists in one place (see $scope.encrypt())
-            if (!('entries' in $scope.unencrypted_root)) {
-                $scope.unencrypted_root['entries'] = {};
+        return angular.fromJson(json);
+    }
+
+    $scope.updateCache = function(callback) {
+        $scope.database.allDocs(function(err, response) {
+            for (var entry in response['rows']) {
+                if (entry['type'] != 'entry') {
+                    continue;
+                }
+
+                try {
+                    $scope.decryptedSection.cache[entry.id] = $scope.decrypt(entry.contents);
+                } catch(e) {
+                    callback(e);
+                }
             }
-            if (!('objects' in $scope.unencrypted_root)) {
-                $scope.unencrypted_root['objects'] = {};
-            }
-            $scope.databaseToEditor();
-            $scope.updateSearch();
-            $scope.setHidden('dbLockScreenClass');
-            $scope.dbSelectionVisible = false;
+
+            callback();
         });
-        return true;
     }
 
     $scope.lock = function() {
-        $scope.save();
-        $scope.unencrypted_root = undefined;
-        $scope.database.selected_entry = undefined;
-        $scope.derived_key = undefined;
+        delete $scope.decryptedSection;
+        $scope.initializeDecryptedSection();
+
         $scope.setVisible('dbLockScreenClass');
         $scope.dbSelectionVisible = true;
     }
 
     $scope.isLocked = function() {
-        return $scope.unencrypted_root == undefined;
+        if (!$scope.decryptedSection) {
+            return false;
+        }
+
+        return $scope.decryptedSection.derived_key == undefined;
     }
 
-    $scope.createNewEntry = function(title, contents, suppressUpdatingSearch) {
-        if (contents === undefined) { contents = Object({}) };
-        var object = Object({
-            uuid: generate_guid(),
-            previous_state_uuid : null,
-            title: title,
-            contents: contents
+    $scope.createNewEntry = function(contents, suppressUpdatingSearch) {
+
+        var c = $scope.encrypt(contents);
+        $scope.database.post({'contents' : c, 'type': 'entry'}, function(err, response) {
+            // Update the cache
+            $scope.decryptedSection.cache[response['id']] = contents;
+
+            if (!suppressUpdatingSearch) {
+                $scope.updateSearch();
+            }
         });
-
-        var entry_uuid = generate_guid();
-
-        $scope.unencrypted_root.objects[object.uuid] = object;
-        $scope.unencrypted_root.entries[entry_uuid] = object.uuid;
-
-        if (!suppressUpdatingSearch) {
-            $scope.updateSearch();
-        }
-
-        return object;
-    }
-
-    $scope.updateEntry = function(entryUUID, differences) {
-        var old_object_uuid = $scope.unencrypted_root.entries[entryUUID];
-        var old_object = $scope.unencrypted_root.objects[old_object_uuid];
-        var new_object = angular.copy(old_object);
-
-        for (key in differences) {
-            new_object[key] = differences[key];
-        }
-
-        new_object.uuid = generate_guid();
-        new_object.old_object_uuid = old_object_uuid;
-
-        $scope.unencrypted_root.objects[new_object.uuid] = new_object;
-        $scope.unencrypted_root.entries[entryUUID] = new_object.uuid;
-    }
-
-    $scope.deterministicallySolveConflict = function(left, right) {
-        var winner;
-        var looser;
-        if (left.uuid > right.uuid) {
-            winner = left;
-            looser = right;
-        } else {
-            winner = right;
-            looser = left;
-        }
     }
 
     $scope.addEntryClicked = function() {
-        $scope.createNewEntry($scope.newEntryTitle);
+        console.log("addEntryClicked()");
+        $scope.editorToDatabase();
+        $scope.createNewEntry({'title': $scope.newEntryTitle});
         $scope.newEntryTitle = '';
-
-        console.log($scope.unencrypted_root);
     }
 
-    $scope.entry = function(uuid) {
-        var object_uuid = $scope.unencrypted_root.entries[uuid];
-        return $scope.unencrypted_root.objects[object_uuid];
+    $scope.entry = function(id) {
+        return $scope.decryptedSection.cache[id];
     }
 
     $scope.search = function(query) {
+        console.log("calling search("+query+")");
+
         var results = [];
         if (!query) {
-            for (uuid in $scope.unencrypted_root.entries) {
-                var object_uuid = $scope.unencrypted_root.entries[uuid];
-                results.push(new Object({'uuid':uuid,
-                                         'object': $scope.unencrypted_root.objects[object_uuid]}));
+            for (uuid in $scope.decryptedSection.cache) {
+                results.push(new Object({'uuid':uuid, 'object': $scope.entry(uuid)}));
             }
         } else {
             var search = query.toLowerCase();
 
-            for (uuid in $scope.unencrypted_root.entries) {
+            for (uuid in $scope.decryptedSection.cache) {
                 var object = $scope.entry(uuid);
                 var field = String(object.title).toLowerCase();
                 index = field.indexOf(search);
@@ -563,8 +358,9 @@ function DatabaseControl($scope) {
         results.sort();
         console.log('results:');
         console.log(results);
-        $scope.selected_entry = undefined;
-        $scope.unencrypted_root.filtered_entries = results;
+
+        $scope.decryptedSection.selected_entry_id = undefined;
+        $scope.decryptedSection.filtered_entries = results;
     }
 
     $scope.updateSearch = function() {
@@ -572,14 +368,24 @@ function DatabaseControl($scope) {
     }
 
     $scope.editorToDatabase = function() {
-        if ($scope.database.selected_entry != undefined) {
-            $scope.updateEntry($scope.database.selected_entry, {'contents': $scope.editor.get() });
+        if ($scope.decryptedSection.selected_entry_id != undefined) {
+            //TODO: Only update if there are changes so that we don't save revisions that don't matter
+            // Update the cache
+            $scope.decryptedSection.cache[$scope.decryptedSection.selected_entry_id] = $scope.editor.get();
+
+            // Encrypt
+            $scope.decryptedSection.selected_entry.contents = $scope.encrypt($scope.editor.get());
+
+            // Save to PouchDB
+            $scope.database.put($scope.decryptedSection.selected_entry);
         }
     }
 
     $scope.databaseToEditor = function() {
-        if ($scope.database.selected_entry != undefined) {
-            $scope.editor.set($scope.entry($scope.database.selected_entry).contents);
+        if ($scope.decryptedSection.selected_entry_id != undefined) {
+            // Use the cached version
+            $scope.decryptedSection.selected_entry = $scope.decryptedSection.cache[$scope.decryptedSection.selected_entry_id];
+            $scope.editor.set($scope.decryptedSection.selected_entry);
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
@@ -588,7 +394,7 @@ function DatabaseControl($scope) {
     $scope.entryClicked = function($event) {
         $scope.editorToDatabase();
         var uuid = $event.currentTarget.attributes['uuid'].value;
-        $scope.database.selected_entry = uuid;
+        $scope.decryptedSection.selected_entry_id = uuid;
         $scope.databaseToEditor();
     }
 

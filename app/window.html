@@ -15,6 +15,7 @@
     <script type="text/javascript" src="lib/sha1/sha1.js"></script>
     <script type="text/javascript" src="lib/pbkdf2/pbkdf2.js"></script>
     <script type="text/javascript" src="lib/xml2json/xml2json.js"></script>
+    <script type="text/javascript" src="lib/pouchdb/pouch.alpha.min.js"></script>
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl" ng-init="init()">
@@ -24,7 +25,6 @@
 		<div class="buttonbox">
 			<button tabindex="2" ng-click="import()" ng-hide="isLocked()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
-		  	<button tabindex="4" ng-click="save()" ng-hide="isLocked()">Save</button>
 		 </div>
 	  	<button id="close_window_button" ng-click="closeWindow()"></button>
 	</div>
@@ -73,15 +73,15 @@
 
 	 	<div id="entries_list">
 		  	<ul name="entries">
-		  		<li ng-repeat="pair in unencrypted_root.filtered_entries"
+		  		<li ng-repeat="pair in decryptedSection.filtered_entries"
 		  		    tabindex="6"
 		  		    uuid="{{pair.uuid}}"
-		  		    ng-class="{selected: pair.uuid==database.selected_entry}"
+		  		    ng-class="{selected: pair.uuid==decryptedSection.selected_entry_id}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
 		  		    ui-keydown="{ ctrl-c : 'entryCopy($event)',
-		  		                   down: 'database.selected_entry += 1',
-		  		                   up: 'database.selected_entry -= 1'}"
+		  		                   down: 'decryptedSection.selected_entry_id += 1',
+		  		                   up: 'decryptedSection.selected_entry_id -= 1'}"
 		  		    ng-mousedown="entryClicked($event)">
 		  			<span class="entry">{{pair.object.title}}</span>
 		  		</li>
