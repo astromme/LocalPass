@@ -1,5 +1,8 @@
 angular.module('localPass', ['ui']);
 
+var local_database_url = "idb://local_database";
+var remote_database_url = "idb://remote_database";
+
 function generate_guid()
 {
     var S4 = function ()
@@ -128,8 +131,9 @@ function DatabaseControl($scope) {
     
 
     $scope.init = function() {
-        Pouch('idb://local_database', function(err, db) {
+        Pouch(local_database_url, function(err, db) {
             $scope.database = db;
+            $scope.database.changes({conflicts:true}, $scope.onChanges)
 
             $scope.database.get('config', function(err, doc) {
                 if (err) {
@@ -157,6 +161,10 @@ function DatabaseControl($scope) {
             });
         });
 
+        Pouch(remote_database_url, function(err, db) {
+            $scope.remote_database = db;
+        });
+
         //TODO: have credentials stored in chrome.storage.sync
         //chrome.storage.sync.get(null, function(items) {});
         //var config = items['config'];
@@ -164,6 +172,12 @@ function DatabaseControl($scope) {
 
     $scope.closeWindow = function() {
         window.close();
+    }
+
+    $scope.onChanges = function(err, response) {
+        console.log("onChanges()");
+        console.log(response);
+        //TODO: conflict resolution
     }
 
     $scope.initializeDecryptedSection = function() {
@@ -251,12 +265,24 @@ function DatabaseControl($scope) {
         });
     }
 
-    $scope.updateRemoteDatabase = function() {
-        //TODO: Implement
+    $scope.replicateLocalToRemote = function(callback) {
+        Pouch.replicate(local_database_url, remote_database_url, function(err, changes) {
+            if (err) {
+                console.log("failed to replicate to remote database: "+err);
+            }
+
+            callback(err, changes);
+        });
     }
 
-    $scope.replicateLocalToRemote = function() {
-        //TODO: Implement
+    $scope.replicateRemoteToLocal = function() {
+        Pouch.replicate(remote_database_url, local_database_url, function(err, changes) {
+            if (err) {
+                console.log("failed to replicate to local database: "+err);
+            }
+
+            callback(err, changes);
+        });
     }
 
     $scope.encrypt = function(data) {
