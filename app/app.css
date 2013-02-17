@@ -138,10 +138,22 @@ h1 {
 	/*background-color: orange;*/
 	background-color: white;
 	position: absolute;
-	width: 100%;
-	height: 100%;
+	left: 0;
+	right: 0;
 	z-index: 11;
 	clear: none;
+	padding-top: 50px;
+	padding-bottom: 50px;
+	padding-left: 100px;
+	padding-right: 100px;
+}
+
+#database_locked_widget h2 {
+	display: block;
+}
+
+#database_locked_widget input {
+	display: inline;
 }
 
 .shown {

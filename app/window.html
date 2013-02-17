@@ -44,12 +44,12 @@
 
 	<div id="database_locked_widget"
 	     ng-class="dbLockScreenClass">
-		<h2>Enter the password for your database</h2>
+		<h2>The database is locked</h2>
 		<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
 			Password: <input type="password" ng-model="password" required>
 			<span class="error"
 			      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
-			<input type="submit" ng-click="verifyPassword()" name="Unlock">
+			<input type="submit" ng-click="verifyPassword()" name="Unlock" value="Unlock">
 		</form>
 	</div>
 
