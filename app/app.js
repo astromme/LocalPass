@@ -21,6 +21,10 @@ function generate_guid()
         );
 }
 
+function toArray(list) {
+  return Array.prototype.slice.call(list || [], 0);
+}
+
 Array.prototype.remove = function() {
     var what, a = arguments, L = a.length, ax;
     while (L && this.length) {
@@ -71,6 +75,12 @@ function readAsText(fileEntry, callback) {
   });
 }
 
+function bytesToSize(bytes) {
+  var sizes = [ "Bytes", "KB", "MB", "GB", "TB" ];
+  var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+  return Math.round(bytes/ Math.pow(1024, i ), 2) + " " + sizes[i];
+}
+
 function CreatePasswordControl($scope) {
     $scope.password = '';
     $scope.password_again = '';
@@ -81,25 +91,15 @@ function CreatePasswordControl($scope) {
         } else {
             $scope.createPasswordForm.$setValidity('different', true);
             $scope.setPassword($scope.password, function() {
-                $scope.updateCache(function(err) {
+                // first, we encrypt the uuid for a way to verify the password easily later
+                $scope.config.encrypted_uuid = $scope.encrypt($scope.config.uuid);
 
-                   $scope.database.get('config', function(err, doc) {
-                        if (err) {
-                            console.log(err);
-                            return;
-                        }
-
-                        // first, we encrypt the uuid for a way to verify the password easily later
-                        doc.encrypted_uuid = $scope.encrypt(doc.uuid);
-
-                        $scope.database.put(doc, function(err, response) {
-                            $scope.$apply(function() {
-                                $scope.setHidden('dbLockScreenClass');
-                                $scope.setHidden('dbPasswordCreationScreenClass');
-                                $scope.password = ''
-                                $scope.password_again = ''
-                            });
-                        });
+                $scope.save('config.json', angular.toJson($scope.config), function() {
+                    $scope.$apply(function() {
+                        $scope.setHidden('dbLockScreenClass');
+                        $scope.setHidden('dbPasswordCreationScreenClass');
+                        $scope.password = ''
+                        $scope.password_again = ''
                     });
                 });
             });
@@ -118,46 +118,61 @@ function EnterPasswordControl($scope) {
 
         $scope.setPassword($scope.password, function() {
 
-            $scope.database.get('config', function(err, doc) {
-                if (err) {
-                    console.log(err);
+            // check if the uuid decryption matches to verify the password
+            try {
+                if ($scope.config.uuid != $scope.decrypt($scope.config.encrypted_uuid)) {
+                    console.log("password is wrong");
+                    $scope.enterPasswordForm.$setValidity('incorrect', true);
                     return;
+
                 }
+            } catch(e) {
+                console.log("error while checking password: " + e);
+                $scope.enterPasswordForm.$setValidity('incorrect', true);
+                return;
+            }
 
-                // check if the uuid decryption matches to verify the password
-                try {
-                    if (doc.uuid != $scope.decrypt(doc.encrypted_uuid)) {
-                        $scope.enterPasswordForm.$setValidity('incorrect', true);
-                        return;
-
-                    }
-                } catch(e) {
+            $scope.updateCache(function(err) {
+                if (err) {
+                    console.log("error while updating cache");
                     $scope.enterPasswordForm.$setValidity('incorrect', true);
                     return;
                 }
-
-                $scope.updateCache(function(err) {
-                    if (err) {
-                        $scope.enterPasswordForm.$setValidity('incorrect', true);
-                        return;
-                    }
-                        
-                    $scope.$apply(function() {
-                        $scope.password = '';
-                        $scope.enterPasswordForm.$setValidity('incorrect', false);
-                        $scope.setHidden('dbLockScreenClass');
-                        $scope.setHidden('dbPasswordCreationScreenClass');
-                    });
+                    
+                $scope.$apply(function() {
+                    console.log("password is correct. unlocking");
+                    $scope.password = '';
+                    $scope.enterPasswordForm.$setValidity('incorrect', false);
+                    $scope.setHidden('dbLockScreenClass');
+                    $scope.setHidden('dbPasswordCreationScreenClass');
                 });
             });
         });
     }
 }
 
+
+
+
+
+
+function updateUsageStats() {
+  chrome.syncFileSystem.getUsageAndQuota(fileSystem, function(storageInfo) {
+    usageBytesText.innerHTML = bytesToSize(storageInfo.usageBytes);
+    quotaBytesText.innerHTML = bytesToSize(storageInfo.quotaBytes);
+  });
+  myFile.getMetadata(function(data) {
+    lastSavedText.innerHTML = data.modificationTime;
+  });
+}
+
+
 function DatabaseControl($scope) {
     $scope.dbLockScreenClass = 'hiddenBelow';
     $scope.dbPasswordCreationScreenClass = 'shown';
-    
+
+    $scope.filesystem = null;
+    $scope.config = null;    
     $scope.database = null;
     $scope.decrypted = null;
 
@@ -166,47 +181,60 @@ function DatabaseControl($scope) {
     
 
     $scope.init = function() {
-        Pouch(local_database_url, function(err, db) {
-            $scope.database = db;
-            $scope.database.changes({conflicts:true}, $scope.onChanges)
 
-            $scope.database.get('config', function(err, doc) {
-                if (err) {
-                    console.log('config is undefined, assuming fresh state');
-
-                    var config = {
-                        _id : 'config',
-                        uuid : generate_guid(),
+        var get_config = function() {
+            $scope.filesystem.root.getFile('config.json', {create: true}, function(f) {
+                f.file(function (file) {
+                    var reader = new FileReader();
+                    reader.onloadend = function() {
+                        try {
+                            $scope.config = angular.fromJson(this.result);
+                        } catch(e) {
+                            $scope.config = angular.fromJson('{}');
+                        }
+                        parse_config();
                     }
+                    reader.readAsText(file);
+                });
+            });  
+        }
 
-                    $scope.database.put(config, function(err, response) {
-                        $scope.setHidden('dbLockScreenClass');
-                        $scope.setVisible('dbPasswordCreationScreenClass');
-                    });
-                    $scope.initializeDecryptedSection();
+        var parse_config = function() {
+            if ('uuid' in $scope.config) {
+                // existing database
+                $scope.initializeDecryptedSection();
 
-                } else { // success
-                    $scope.initializeDecryptedSection();
+                $scope.$apply(function() {
+                    $scope.setVisible('dbLockScreenClass');
+                    $scope.setHidden('dbPasswordCreationScreenClass');
+                });
 
-                    $scope.$apply(function() {
-                        $scope.setVisible('dbLockScreenClass');
-                        $scope.setHidden('dbPasswordCreationScreenClass');
-                    });
-                }
-            });
+            } else {
+                // fresh database
+                $scope.config.uuid = generate_guid();
+
+                $scope.save('config.json', angular.toJson($scope.config), function() {
+                    $scope.setHidden('dbLockScreenClass');
+                    $scope.setVisible('dbPasswordCreationScreenClass');
+                });
+
+                $scope.initializeDecryptedSection();
+            }
+        }
+
+        chrome.syncFileSystem.requestFileSystem(function(fs) {
+            $scope.filesystem = fs;
+            get_config()
         });
-
-        Pouch(remote_database_url, function(err, db) {
-            $scope.remote_database = db;
-        });
-
-        //TODO: have credentials stored in chrome.storage.sync
-        //chrome.storage.sync.get(null, function(items) {});
-        //var config = items['config'];
     }
 
     $scope.closeWindow = function() {
         window.close();
+    }
+
+    $scope.destroy = function() {
+        chrome.syncFileSystem.deleteFileSystem($scope.filesystem, function() {
+        });
     }
 
     $scope.onChanges = function(err, response) {
@@ -216,14 +244,14 @@ function DatabaseControl($scope) {
     }
 
     $scope.initializeDecryptedSection = function() {
-        $scope.decryptedSection = Object();
+        $scope.decrypted = Object();
 
-        $scope.decryptedSection.derived_key = null;
+        $scope.decrypted.derived_key = null;
 
-        $scope.decryptedSection.selected_entry = null;
-        $scope.decryptedSection.selected_entry_id = null;
+        $scope.decrypted.selected_entry = null;
+        $scope.decrypted.selected_entry_id = null;
 
-        $scope.decryptedSection.cache = {};
+        $scope.decrypted.cache = {};
     } 
 
     // Async. Notifies when finished via on_finished_callback
@@ -234,7 +262,7 @@ function DatabaseControl($scope) {
             $scope.status_message = percent_done + "%"};
 
         var result_callback = function(key) {
-            $scope.decryptedSection.derived_key = key;
+            $scope.decrypted.derived_key = key;
             $scope.status_message = '';
             on_finished_callback();
         };
@@ -300,35 +328,18 @@ function DatabaseControl($scope) {
         });
     }
 
-    $scope.replicateLocalToRemote = function(callback) {
-        Pouch.replicate(local_database_url, remote_database_url, function(err, changes) {
-            if (err) {
-                console.log("failed to replicate to remote database: "+err);
-            }
-
-            callback(err, changes);
-        });
-    }
-
-    $scope.replicateRemoteToLocal = function() {
-        Pouch.replicate(remote_database_url, local_database_url, function(err, changes) {
-            if (err) {
-                console.log("failed to replicate to local database: "+err);
-            }
-
-            callback(err, changes);
-        });
-    }
-
+    // encrypts a piece of data
     $scope.encrypt = function(data) {
         var json = angular.toJson(data);
-        return sjcl.encrypt($scope.decryptedSection.derived_key, json);
+        return sjcl.encrypt($scope.decrypted.derived_key, json);
     }
 
+    // decryptes a piece of data
     $scope.decrypt = function(data) {
-        console.log(data);
+        //console.log(data);
         try {
-            var json = sjcl.decrypt($scope.decryptedSection.derived_key, data);
+            var json = sjcl.decrypt($scope.decrypted.derived_key, data);
+            console.log(json);
         } catch(e) {
             console.log("$scope.decrypt() Error when decrypting data: " + e);
             return false;
@@ -338,29 +349,52 @@ function DatabaseControl($scope) {
     }
 
     $scope.updateCache = function(callback) {
+        var dirReader = $scope.filesystem.root.createReader();
+        var entries = [];
+        var numberRead = 0;
 
-        $scope.database.allDocs({include_docs:true}, function(err, response) {
-            console.log(response.rows);
-            for (var i=0; i<response['total_rows']; i++) {
-                var entry = response.rows[i].doc;
-                if (entry['type'] != 'entry') {
-                    continue;
+        // Call the reader.readEntries() until no more results are returned.
+        var readEntries = function() {
+            dirReader.readEntries (function(results) {
+                if (!results.length) {
+                    console.log('entries:');
+                    console.log(entries);
+                    entries.forEach(function(entry, i) {
+                        if (entry.name == "config.json") { return; }
+
+                        readAsText(entry, function(contents) {
+                            var e = angular.fromJson($scope.decrypt(contents));
+                            console.log(e);
+                            try {
+                                $scope.decrypted.cache[e.uuid] = e;
+                            } catch(e) {
+                                console.log("error decrypting entry: " + e);
+                            }
+
+                            numberRead += 1;
+                            if (numberRead == entries.length-1) { // config.json is skipped
+                                // finished. update search then callback
+
+                                $scope.updateSearch();
+                                callback();
+                            }
+                        });
+                    });
+                } else {
+                    entries = entries.concat(toArray(results));
+                    readEntries();
                 }
+            }, errorHandler);
+        };
 
-                try {
-                    $scope.decryptedSection.cache[entry.id] = $scope.decrypt(entry.contents);
-                } catch(e) {
-                    console.log("error decrypting entry: " + e);
-                    callback(e);
-                }
-            }
-
-            callback();
-        });
+        console.log("reading objects/")
+        readEntries(); // Start reading dirs.
     }
 
+    // locks the database, removing the decrypted section
+    // and showing the lock screen
     $scope.lock = function() {
-        delete $scope.decryptedSection;
+        delete $scope.decrypted;
         $scope.initializeDecryptedSection();
 
         $scope.setVisible('dbLockScreenClass');
@@ -368,19 +402,27 @@ function DatabaseControl($scope) {
     }
 
     $scope.isLocked = function() {
-        if (!$scope.decryptedSection) {
-            return false;
+        if (!$scope.decrypted) {
+            return true;
         }
 
-        return !$scope.decryptedSection.derived_key;
+        return !$scope.decrypted.derived_key;
+    }
+
+    $scope.filename = function(object) {
+        if (!('uuid' in object)) {
+            console.log('error, object has no uuid');
+        }
+        return object.uuid;
     }
 
     $scope.createNewEntry = function(contents, suppressUpdatingSearch) {
+        contents.uuid = generate_guid();
 
         var c = $scope.encrypt(contents);
-        $scope.database.post({'contents' : c, 'type': 'entry'}, function(err, response) {
+        $scope.save($scope.filename(contents), c, function() {
             // Update the cache
-            $scope.decryptedSection.cache[response['id']] = contents;
+            $scope.decrypted.cache[contents.uuid] = contents;
 
             if (!suppressUpdatingSearch) {
                 $scope.updateSearch();
@@ -396,21 +438,37 @@ function DatabaseControl($scope) {
     }
 
     $scope.entry = function(id) {
-        return $scope.decryptedSection.cache[id];
+        return $scope.decrypted.cache[id];
+    }
+
+    $scope.save = function(filename, contents, callback) {
+        $scope.filesystem.root.getFile(filename, {create: true}, function(file) {
+            file.createWriter(function (fileWriter) {
+                var blob = new Blob([contents], {type: 'text/plain'});
+                fileWriter.onwriteend = function() {
+                    callback();
+                }
+                fileWriter.write(blob);
+            });
+        });
     }
 
     $scope.search = function(query) {
+        if (!query) {
+            query = '';
+        }
         console.log("calling search("+query+")");
+        console.log($scope.decrypted.cache);
 
         var results = [];
         if (!query) {
-            for (uuid in $scope.decryptedSection.cache) {
+            for (uuid in $scope.decrypted.cache) {
                 results.push(new Object({'uuid':uuid, 'object': $scope.entry(uuid)}));
             }
         } else {
             var search = query.toLowerCase();
 
-            for (uuid in $scope.decryptedSection.cache) {
+            for (uuid in $scope.decrypted.cache) {
                 var object = $scope.entry(uuid);
                 var field = String(object.title).toLowerCase();
                 index = field.indexOf(search);
@@ -424,8 +482,8 @@ function DatabaseControl($scope) {
         console.log('results:');
         console.log(results);
 
-        $scope.decryptedSection.selected_entry_id = null;
-        $scope.decryptedSection.filtered_entries = results;
+        $scope.decrypted.selected_entry_id = null;
+        $scope.decrypted.filtered_entries = results;
     }
 
     $scope.updateSearch = function() {
@@ -433,33 +491,26 @@ function DatabaseControl($scope) {
     }
 
     $scope.editorToDatabase = function() {
-        if ($scope.decryptedSection.selected_entry_id) {
+        if ($scope.decrypted.selected_entry_id) {
             //TODO: Only update if there are changes so that we don't save revisions that don't matter
             // Update the cache
-            $scope.decryptedSection.cache[$scope.decryptedSection.selected_entry_id] = $scope.editor.get();
+            $scope.decrypted.cache[$scope.decrypted.selected_entry_id] = $scope.editor.get();
 
             // Encrypt
-            $scope.decryptedSection.selected_entry = $scope.encrypt($scope.editor.get());
+            var encrypted = $scope.encrypt($scope.editor.get());
 
-            // Save to PouchDB
-            $scope.database.get($scope.decryptedSection.selected_entry_id, function(err, doc) {
-                if (err) {
-                    console.log(err);
-                    return;
-                }
+            // Save
+            $scope.save($scope.filename($scope.editor.get()), encrypted, function() {
 
-                doc.contents = $scope.encrypt($scope.decryptedSection.selected_entry);
-                console.log(doc);
-                $scope.database.put(doc);
             });
         }
     }
 
     $scope.databaseToEditor = function() {
-        if ($scope.decryptedSection.selected_entry_id) {
+        if ($scope.decrypted.selected_entry_id) {
             // Use the cached version
-            $scope.decryptedSection.selected_entry = $scope.decryptedSection.cache[$scope.decryptedSection.selected_entry_id];
-            $scope.editor.set($scope.decryptedSection.selected_entry);
+            $scope.decrypted.selected_entry = $scope.decrypted.cache[$scope.decrypted.selected_entry_id];
+            $scope.editor.set($scope.decrypted.selected_entry);
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
@@ -468,7 +519,7 @@ function DatabaseControl($scope) {
     $scope.entryClicked = function($event) {
         $scope.editorToDatabase();
         var uuid = $event.currentTarget.attributes['uuid'].value;
-        $scope.decryptedSection.selected_entry_id = uuid;
+        $scope.decrypted.selected_entry_id = uuid;
         $scope.databaseToEditor();
     }
 

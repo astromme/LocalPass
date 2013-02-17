@@ -73,15 +73,15 @@
 
 	 	<div id="entries_list">
 		  	<ul name="entries">
-		  		<li ng-repeat="pair in decryptedSection.filtered_entries"
+		  		<li ng-repeat="pair in decrypted.filtered_entries"
 		  		    tabindex="6"
 		  		    uuid="{{pair.uuid}}"
-		  		    ng-class="{selected: pair.uuid==decryptedSection.selected_entry_id}"
+		  		    ng-class="{selected: pair.uuid==decrypted.selected_entry_id}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
 		  		    ui-keydown="{ ctrl-c : 'entryCopy($event)',
-		  		                   down: 'decryptedSection.selected_entry_id += 1',
-		  		                   up: 'decryptedSection.selected_entry_id -= 1'}"
+		  		                   down: 'decrypted.selected_entry_id += 1',
+		  		                   up: 'decrypted.selected_entry_id -= 1'}"
 		  		    ng-mousedown="entryClicked($event)">
 		  			<span class="entry">{{pair.object.title}}</span>
 		  		</li>
