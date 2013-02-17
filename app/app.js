@@ -425,7 +425,9 @@ function DatabaseControl($scope) {
             $scope.decrypted.cache[contents.uuid] = contents;
 
             if (!suppressUpdatingSearch) {
-                $scope.updateSearch();
+                $scope.$apply(function() {
+                   $scope.updateSearch();
+                });
             }
         });
     }
