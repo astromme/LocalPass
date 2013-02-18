@@ -300,11 +300,9 @@ function DatabaseControl($scope) {
 
             readOnlyEntry.file(function(file) {
                 readAsText(readOnlyEntry, function(result) {
-                    parser = new DOMParser();
-                    xmlDoc = parser.parseFromString(result,"text/xml");
-                    json = angular.fromJson(xml2json(xmlDoc, ''));
-
-                    $scope.new();
+                    var parser = new DOMParser();
+                    var xmlDoc = parser.parseFromString(result,"text/xml");
+                    var json = angular.fromJson(xml2json(xmlDoc, ''));
 
                     var handleSubgroups = function(object, prefixString) {
                         var groups = object.group;
@@ -315,15 +313,17 @@ function DatabaseControl($scope) {
                             if (!entries) { entries = Object({}) }
                             if (!entries.forEach) { entries = [entries]; }
                             entries.forEach(function(entry) {
-                                //TODO: update for new entry/object system
                                 entry.tags = [prefixString + group.title];
-                                var db_entry = $scope.addEntry(entry.title, entry, true /*suppress updating search */);
-                                db_entry.creation = db_entry.contents.creation;
-                                db_entry.last_access = db_entry.contents.lastaccess;
-                                db_entry.last_modification = db_entry.contents.lastmod;
-                                delete db_entry.contents.creation;
-                                delete db_entry.contents.lastaccess;
-                                delete db_entry.contents.lastmod;
+                                var db_entry = $scope.createNewEntry(entry, true /*suppress updating search */);
+
+                                //TODO: update for new entry/object system
+
+                                // db_entry.creation = db_entry.contents.creation;
+                                // db_entry.last_access = db_entry.contents.lastaccess;
+                                // db_entry.last_modification = db_entry.contents.lastmod;
+                                // delete db_entry.contents.creation;
+                                // delete db_entry.contents.lastaccess;
+                                // delete db_entry.contents.lastmod;
                             });
 
                             if (group.group) {
