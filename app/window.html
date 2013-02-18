@@ -30,21 +30,26 @@
 	</div>
 
 	<div id="database_password_creation_widget"
+		 class="dbModalDialog"
 	     ng-class="dbPasswordCreationScreenClass">
-		<h2>Create a password for your database</h2>
-		<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
-			Password: <input type="password" ng-model="password" required><br />
-			Password (again): <input type="password" ng-model="password_again" required>
-			<span class="error"
-			      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+	    <div id='database_password_creation_widget_inner' class="dbModalDialogInner">
+	    	<img src="preferences-desktop-cryptography.png">
+			<h2>Set the database password</h2>
+			<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
+				Password: <input type="password" ng-model="password" required><br />
+				Password (again): <input type="password" ng-model="password_again" required>
+				<span class="error"
+				      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
 
-	 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
-	 	</form>
+		 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
+		 	</form>
+		 </div>
 	</div>
 
 	<div id="database_locked_widget"
+		 class="dbModalDialog"
 	     ng-class="dbLockScreenClass">
-	    <div id='database_locked_widget_inner'>
+	    <div id='database_locked_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
 			<h2>The database is locked</h2>
 			<form id="database_locked_widget_form"
