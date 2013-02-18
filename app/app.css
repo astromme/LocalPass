@@ -302,6 +302,14 @@ h1 {
 	padding-right: 5px;
 }
 
+#left_sidebar *:focus {
+	outline: none;
+}
+
+.entry:focus {
+	outline: none;
+}
+
 .selected {
 	background-color: #4671D5 !important;
 	color: white;
@@ -319,6 +327,7 @@ h1 {
 
 #entries_searchbox {
 	margin: 1px;
+	margin-left: 5px;
 	padding: 0;
 	border: none;
 	outline: none;
@@ -353,12 +362,18 @@ h1 {
 
 #add_entry_input {
 	margin: 1px;
+	margin-left: 5px;
 	padding: 0;
 	border: none;
 	outline: none;
 	width: auto;
 	height: 21px;
 	background-color: white;
+	box-shadow: none;
+}
+
+#add_entry_input:focus {
+	outline: none;
 }
 
 
