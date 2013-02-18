@@ -421,12 +421,14 @@ function DatabaseControl($scope) {
     }
 
     $scope.createNewEntry = function(contents, suppressUpdatingSearch) {
-        contents.uuid = generate_guid();
+        var entry = Object();
+        entry.uuid = generate_guid();
+        entry.contents = contents;
 
-        var c = $scope.encrypt(contents);
-        $scope.save($scope.filename(contents), c, function() {
+        var c = $scope.encrypt(entry);
+        $scope.save($scope.filename(entry), c, function() {
             // Update the cache
-            $scope.decrypted.cache[contents.uuid] = contents;
+            $scope.decrypted.cache[entry.uuid] = entry;
 
             if (!suppressUpdatingSearch) {
                 $scope.$apply(function() {
@@ -498,15 +500,15 @@ function DatabaseControl($scope) {
 
     $scope.editorToDatabase = function() {
         if ($scope.decrypted.selected_entry_id) {
-            //TODO: Only update if there are changes so that we don't save revisions that don't matter
             // Update the cache
-            $scope.decrypted.cache[$scope.decrypted.selected_entry_id] = $scope.editor.get();
+            $scope.decrypted.selected_entry.contents = $scope.editor.get();
+            $scope.decrypted.cache[$scope.decrypted.selected_entry_id] = $scope.decrypted.selected_entry;
 
             // Encrypt
-            var encrypted = $scope.encrypt($scope.editor.get());
+            var encrypted = $scope.encrypt($scope.decrypted.selected_entry);
 
             // Save
-            $scope.save($scope.filename($scope.editor.get()), encrypted, function() {
+            $scope.save($scope.filename($scope.decrypted.selected_entry), encrypted, function() {
 
             });
         }
@@ -516,7 +518,7 @@ function DatabaseControl($scope) {
         if ($scope.decrypted.selected_entry_id) {
             // Use the cached version
             $scope.decrypted.selected_entry = $scope.decrypted.cache[$scope.decrypted.selected_entry_id];
-            $scope.editor.set($scope.decrypted.selected_entry);
+            $scope.editor.set($scope.decrypted.selected_entry.contents);
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
