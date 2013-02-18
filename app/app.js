@@ -219,10 +219,8 @@ function DatabaseControl($scope) {
                 console.log('new database');
                 $scope.config.uuid = generate_guid();
 
-                $scope.save('config.json', angular.toJson($scope.config), function() {
-                    $scope.setHidden('dbLockScreenClass');
-                    $scope.setVisible('dbPasswordCreationScreenClass');
-                });
+                $scope.setHidden('dbLockScreenClass');
+                $scope.setVisible('dbPasswordCreationScreenClass');
 
                 $scope.initializeDecryptedSection();
             }
