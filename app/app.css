@@ -124,6 +124,24 @@ h1 {
 	left: 0;
 }
 
+@-webkit-keyframes shake {
+	0% { -webkit-transform: translate(0px, 0px); }
+	20% { -webkit-transform: translate(5px, 0px); }
+	40% { -webkit-transform: translate(-5px, 0px); }
+	60% { -webkit-transform: translate(5px, 0px); }
+	80% { -webkit-transform: translate(-5px, 0px); }
+	100% { -webkit-transform: translate(0px, 0px); }
+}
+
+.shake {
+	display:inline-block;
+	-webkit-animation-name: shake;
+	-webkit-animation-duration: 0.5s;
+	-webkit-transform-origin:50% 50%;
+	-webkit-animation-iteration-count: once;
+	-webkit-animation-timing-function: linear;
+}
+
 #database_password_creation_widget {
 	/*background-color: pink;*/
 	background-color: white;
@@ -142,18 +160,57 @@ h1 {
 	right: 0;
 	z-index: 11;
 	clear: none;
-	padding-top: 50px;
-	padding-bottom: 50px;
-	padding-left: 100px;
-	padding-right: 100px;
+	box-shadow 0px 0px 1px black;
+}
+
+#database_locked_widget_inner {
+	width: 600px;
+	height: 256px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 80px;
+}
+
+#database_locked_widget_inner img {
+	float: left;
+	clear: none;
 }
 
 #database_locked_widget h2 {
 	display: block;
+	font-size: 22px;
+	float:left;
+	margin-top: 60px;
+	margin-left: 30px;
 }
 
-#database_locked_widget input {
+#database_locked_widget h3 {
+	line-height: 1em;
+	margin-top: 0px;
+	margin-bottom: 10px;
+	display: block;
+	font-size: 15px;
+}
+
+#database_locked_widget form {
+	margin-left: 30px;
+	width: 240px;
+	background-color: #F2F8F6;
+	border: 1px solid #777777;
+	float: left;
+	padding: 15px 20px 15px 20px;
+	border-radius: 5px;
+	box-shadow: inset 0px 1px 3px #777777;
+}
+
+
+#database_locked_widget input[type=password] {
 	display: inline;
+	width: 95%;
+}
+
+#database_locked_widget input[type=submit] {
+	float: right;
 }
 
 .shown {

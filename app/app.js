@@ -112,7 +112,6 @@ function EnterPasswordControl($scope) {
 
     $scope.verifyPassword = function() {
         if ($scope.password.length = 0) {
-            $scope.enterPasswordForm.$setValidity('incorrect', true);
             return;
         }
 
@@ -121,28 +120,32 @@ function EnterPasswordControl($scope) {
             // check if the uuid decryption matches to verify the password
             try {
                 if ($scope.config.uuid != $scope.decrypt($scope.config.encrypted_uuid)) {
+                    $scope.$apply(function() {
+                        $scope.password = '';
+                    })
+                    $('#database_locked_widget_form').addClass('shake')
+                    setTimeout(function() {
+                        $('#database_locked_widget_form').removeClass('shake')
+                    }, 1000);
                     console.log("password is wrong");
-                    $scope.enterPasswordForm.$setValidity('incorrect', true);
                     return;
 
                 }
             } catch(e) {
                 console.log("error while checking password: " + e);
-                $scope.enterPasswordForm.$setValidity('incorrect', true);
                 return;
             }
 
             $scope.updateCache(function(err) {
                 if (err) {
                     console.log("error while updating cache");
-                    $scope.enterPasswordForm.$setValidity('incorrect', true);
                     return;
                 }
                     
                 $scope.$apply(function() {
                     console.log("password is correct. unlocking");
                     $scope.password = '';
-                    $scope.enterPasswordForm.$setValidity('incorrect', false);
+                    $('#database_locked_widget input[type=password]').blur()
                     $scope.setHidden('dbLockScreenClass');
                     $scope.setHidden('dbPasswordCreationScreenClass');
                 });
@@ -183,6 +186,7 @@ function DatabaseControl($scope) {
     $scope.init = function() {
 
         var get_config = function() {
+            console.log('getting config');
             $scope.filesystem.root.getFile('config.json', {create: true}, function(f) {
                 f.file(function (file) {
                     var reader = new FileReader();
@@ -202,6 +206,7 @@ function DatabaseControl($scope) {
         var parse_config = function() {
             if ('uuid' in $scope.config) {
                 // existing database
+                console.log('existing datbase');
                 $scope.initializeDecryptedSection();
 
                 $scope.$apply(function() {
@@ -211,6 +216,7 @@ function DatabaseControl($scope) {
 
             } else {
                 // fresh database
+                console.log('new database');
                 $scope.config.uuid = generate_guid();
 
                 $scope.save('config.json', angular.toJson($scope.config), function() {

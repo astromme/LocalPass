@@ -44,13 +44,16 @@
 
 	<div id="database_locked_widget"
 	     ng-class="dbLockScreenClass">
-		<h2>The database is locked</h2>
-		<form name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
-			Password: <input type="password" ng-model="password" required>
-			<span class="error"
-			      ng-show="enterPasswordForm.$error.incorrect">Password Incorrect (or database is corrupted)</span><br>
-			<input type="submit" ng-click="verifyPassword()" name="Unlock" value="Unlock">
-		</form>
+	    <div id='database_locked_widget_inner'>
+	    	<img src="preferences-desktop-cryptography.png">
+			<h2>The database is locked</h2>
+			<form id="database_locked_widget_form"
+			      name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
+				<h3>Master Password</h3>
+				<input type="password" ng-model="password" required><br>
+				<input type="submit" ng-click="verifyPassword()" name="Unlock" value="Unlock">
+			</form>
+		</div>
 	</div>
 
 
