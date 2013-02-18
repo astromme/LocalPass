@@ -489,7 +489,7 @@ function DatabaseControl($scope) {
 
             for (uuid in $scope.decrypted.cache) {
                 var object = $scope.entry(uuid);
-                var field = String(object.title).toLowerCase();
+                var field = String(object.contents.title).toLowerCase();
                 index = field.indexOf(search);
                 if (index != -1) {
                     results.push(new Object({'uuid':uuid, 'object':object}));
