@@ -184,6 +184,7 @@ function DatabaseControl($scope) {
     
 
     $scope.init = function() {
+        console.log('init');
 
         var get_config = function() {
             console.log('getting config');
@@ -191,6 +192,7 @@ function DatabaseControl($scope) {
                 f.file(function (file) {
                     var reader = new FileReader();
                     reader.onloadend = function() {
+                        console.log('got config');
                         try {
                             $scope.config = angular.fromJson(this.result);
                         } catch(e) {
@@ -214,6 +216,10 @@ function DatabaseControl($scope) {
                     $scope.setHidden('dbPasswordCreationScreenClass');
                 });
 
+                setTimeout(function() {
+                    $('#database_locked_widget input[type=password]').focus();
+                }, 100);
+
             } else {
                 // fresh database
                 console.log('new database');
@@ -222,11 +228,16 @@ function DatabaseControl($scope) {
                 $scope.setHidden('dbLockScreenClass');
                 $scope.setVisible('dbPasswordCreationScreenClass');
 
+                setTimeout(function() {
+                    $('#database_password_creation_widget input[type=password]')[0].focus()
+                }, 100);
+
                 $scope.initializeDecryptedSection();
             }
         }
 
         chrome.syncFileSystem.requestFileSystem(function(fs) {
+            console.log('got filesystem');
             $scope.filesystem = fs;
             get_config()
         });
