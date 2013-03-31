@@ -1,26 +1,19 @@
 {
   "name": "LocalPass",
   "description": "A local password manager app",
-  "version": "0.1",
+  "version": "0.2.1",
   "minimum_chrome_version": "27",
   "app": {
     "background": {
       "scripts": ["background.js"]
     }
   },
-  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDaTkqwjnYjMnA8KsARqUIRGQ+5PSLi69lkiBOBXQsfH5NSrPU4gnuI0L45GdLvl+M7cc1uQl75bLMrPhDLLv+JVZCyKNZrmhCM03jXMUHT9CE8PAO4qc4igDSL6cf+SpNIvN7YrNLUi//83eBS4EOdI4R5046UMEDo1X9B4J+QjQIDAQAB",
   "permissions": [
     "storage",
     "unlimitedStorage",
     "fileSystem",
-    "experimental",
     "clipboardWrite",
-    "syncFileSystem",
-    "https://localpassapp.appspot.com/"
+    "syncFileSystem"
   ],
-  "oauth2": {
-    "client_id": "1092693610281.apps.googleusercontent.com",
-    "scopes": ["https://www.googleapis.com/auth/userinfo.profile"]
-  },
   "icons": { "16": "icon-16.png", "128": "icon-128.png" }
 }
