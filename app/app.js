@@ -1,8 +1,5 @@
 angular.module('localPass', ['ui']);
 
-var local_database_url = "idb://local_database";
-var remote_database_url = "idb://remote_database";
-
 function generate_guid()
 {
     var S4 = function ()
