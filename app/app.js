@@ -55,15 +55,20 @@ angular.module('localpass.directive', []).directive('different', function() {
 
 */
 
-function errorHandler(e) {
-  console.error(e);
+function createErrorHandler() {
+    var extra_info = arguments;
+
+    return function(e) {
+        console.log("error: " + Array.prototype.join.call(extra_info, ", "));
+        console.error(e);
+    }
 }
 
 function readAsText(fileEntry, callback) {
   fileEntry.file(function(file) {
     var reader = new FileReader();
 
-    reader.onerror = errorHandler;
+    reader.onerror = createErrorHandler("while reading file");
     reader.onload = function(e) {
       callback(e.target.result);
     };
@@ -152,21 +157,6 @@ function EnterPasswordControl($scope) {
 }
 
 
-
-
-
-
-function updateUsageStats() {
-  chrome.syncFileSystem.getUsageAndQuota(fileSystem, function(storageInfo) {
-    usageBytesText.innerHTML = bytesToSize(storageInfo.usageBytes);
-    quotaBytesText.innerHTML = bytesToSize(storageInfo.quotaBytes);
-  });
-  myFile.getMetadata(function(data) {
-    lastSavedText.innerHTML = data.modificationTime;
-  });
-}
-
-
 function DatabaseControl($scope) {
     $scope.dbLockScreenClass = 'hiddenBelow';
     $scope.dbPasswordCreationScreenClass = 'shown';
@@ -199,7 +189,7 @@ function DatabaseControl($scope) {
                     }
                     reader.readAsText(file);
                 });
-            });  
+            }, createErrorHandler("while getting config"));  
         }
 
         var parse_config = function() {
@@ -221,6 +211,7 @@ function DatabaseControl($scope) {
                 // fresh database
                 console.log('new database');
                 $scope.config.uuid = generate_guid();
+                $scope.initializeDecryptedSection();
 
                 $scope.setHidden('dbLockScreenClass');
                 $scope.setVisible('dbPasswordCreationScreenClass');
@@ -228,13 +219,16 @@ function DatabaseControl($scope) {
                 setTimeout(function() {
                     $('#database_password_creation_widget input[type=password]')[0].focus()
                 }, 100);
-
-                $scope.initializeDecryptedSection();
             }
         }
 
         chrome.syncFileSystem.requestFileSystem(function(fs) {
             console.log('got filesystem');
+            chrome.syncFileSystem.getUsageAndQuota(fs, function(storageInfo) {
+                console.log(storageInfo);
+                console.log(bytesToSize(storageInfo.usageBytes) + " used of");
+                console.log(bytesToSize(storageInfo.quotaBytes) + " quota.");
+            });
             $scope.filesystem = fs;
             get_config()
         });
@@ -245,7 +239,13 @@ function DatabaseControl($scope) {
     }
 
     $scope.destroy = function() {
-        chrome.syncFileSystem.deleteFileSystem($scope.filesystem, function() {
+        console.log("deleting filesystem...");
+        chrome.syncFileSystem.deleteFileSystem($scope.filesystem, function(success) {
+            if (success) {
+                console.log("filesystem deleted.");
+            } else {
+                console.log("filesystem delete failed.");
+            }
         });
     }
 
@@ -396,7 +396,7 @@ function DatabaseControl($scope) {
                     entries = entries.concat(toArray(results));
                     readEntries();
                 }
-            }, errorHandler);
+            }, createErrorHandler("while parsing directory tree in $scope.updateCache()"));
         };
 
         console.log("reading objects/")
@@ -466,7 +466,7 @@ function DatabaseControl($scope) {
                 }
                 fileWriter.write(blob);
             });
-        });
+        }, createErrorHandler("saving file", filename));
     }
 
     $scope.search = function(query) {
