@@ -98,8 +98,8 @@ function CreatePasswordControl($scope) {
 
                 $scope.save('config.json', angular.toJson($scope.config), function() {
                     $scope.$apply(function() {
-                        $scope.setHidden('dbLockScreenClass');
-                        $scope.setHidden('dbPasswordCreationScreenClass');
+                        $scope.hideWithAnimation('dbLockScreenClass');
+                        $scope.hideWithAnimation('dbPasswordCreationScreenClass');
                         $scope.password = ''
                         $scope.password_again = ''
                     });
@@ -148,8 +148,8 @@ function EnterPasswordControl($scope) {
                     console.log("password is correct. unlocking");
                     $scope.password = '';
                     $('#database_locked_widget input[type=password]').blur()
-                    $scope.setHidden('dbLockScreenClass');
-                    $scope.setHidden('dbPasswordCreationScreenClass');
+                    $scope.hideWithAnimation('dbLockScreenClass');
+                    $scope.hideWithAnimation('dbPasswordCreationScreenClass');
                 });
             });
         });
@@ -198,9 +198,17 @@ function DatabaseControl($scope) {
                 console.log('existing datbase');
                 $scope.initializeDecryptedSection();
 
+                console.log('showing lock screen')
                 $scope.$apply(function() {
-                    $scope.setVisible('dbLockScreenClass');
-                    $scope.setHidden('dbPasswordCreationScreenClass');
+                    $scope.showWithAnimation('dbLockScreenClass');
+                });
+
+                // once done showing, hide the loading screen class
+                $('#database_locked_widget').one('webkitTransitionEnd', function(e) {
+                    console.log("hiding loading screen class");
+                    $scope.$apply(function() {
+                        $scope.hide('dbLoadingScreenClass');
+                    });
                 });
 
                 setTimeout(function() {
@@ -213,9 +221,18 @@ function DatabaseControl($scope) {
                 $scope.config.uuid = generate_guid();
                 $scope.initializeDecryptedSection();
 
-                $scope.setHidden('dbLockScreenClass');
-                $scope.setVisible('dbPasswordCreationScreenClass');
-
+                $scope.$apply(function() {
+                    $scope.showWithAnimation('dbPasswordCreationScreenClass');
+                });
+            
+                // once done showing, hide the loading screen class
+                $('#database_password_creation_widget').one('webkitTransitionEnd', function(e) {
+                    console.log("hiding loading screen class");
+                    $scope.$apply(function() {
+                        $scope.hide('dbLoadingScreenClass');
+                    });
+                });
+  
                 setTimeout(function() {
                     $('#database_password_creation_widget input[type=password]')[0].focus()
                 }, 100);
@@ -409,7 +426,7 @@ function DatabaseControl($scope) {
         delete $scope.decrypted;
         $scope.initializeDecryptedSection();
 
-        $scope.setVisible('dbLockScreenClass');
+        $scope.showWithAnimation('dbLockScreenClass');
         $scope.dbSelectionVisible = true;
     }
 
@@ -543,11 +560,19 @@ function DatabaseControl($scope) {
         console.log($event);
     }
 
-    $scope.setVisible = function(variable) {
+    $scope.showWithAnimation = function(variable) {
+        $scope[variable] = 'shownAnimation';
+    }
+    
+    $scope.show = function(variable) {
         $scope[variable] = 'shown';
     }
 
-    $scope.setHidden = function(variable) {
+    $scope.hideWithAnimation = function(variable) {
+        $scope[variable] = 'hiddenBelowAnimation';
+    }
+
+    $scope.hide = function(variable) {
         $scope[variable] = 'hiddenBelow';
     }
 

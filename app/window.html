@@ -30,7 +30,7 @@
 	</div>
 
 	<div id="database_password_creation_widget"
-		 class="dbModalDialog"
+		 class="dbModalDialog hiddenBelow"
 	     ng-class="dbPasswordCreationScreenClass">
 	    <div id='database_password_creation_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
@@ -47,7 +47,7 @@
 	</div>
 
 	<div id="database_locked_widget"
-		 class="dbModalDialog"
+		 class="dbModalDialog hiddenBelow"
 	     ng-class="dbLockScreenClass">
 	    <div id='database_locked_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
@@ -61,6 +61,13 @@
 		</div>
 	</div>
 
+	<div id="loading_screen"
+		 class="dbModalDialog shown"
+	     ng-class="dbLoadingScreenClass">
+	     <div id="loading_inner" class="dbModalDialogInner">
+	     	<h1>Loading</h1>
+	     </div>
+	</div>
 
 	<div id="content">
 	  	<div id="main_content">
