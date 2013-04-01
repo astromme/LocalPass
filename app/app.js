@@ -388,6 +388,13 @@ function DatabaseControl($scope) {
                 if (!results.length) {
                     console.log('entries:');
                     console.log(entries);
+
+                    if (entries.length == 1) {
+                        // it should just be config.json
+                        $scope.updateSearch();
+                        return callback();
+                    }
+
                     entries.forEach(function(entry, i) {
                         if (entry.name == "config.json") { return; }
 
@@ -405,7 +412,7 @@ function DatabaseControl($scope) {
                                 // finished. update search then callback
 
                                 $scope.updateSearch();
-                                callback();
+                                return callback();
                             }
                         });
                     });
