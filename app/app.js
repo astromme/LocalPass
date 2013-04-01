@@ -1,4 +1,4 @@
-var module = angular.module('localPass', ['ui'])
+var module = angular.module('localPass', ['ui', 'ui.directives'])
 
 module.directive('noPropagateClick', function() {
     return function(scope, element, attrs) {
@@ -576,6 +576,20 @@ function DatabaseControl($scope) {
     $scope.deselectActiveEntry = function() {
         $scope.editorToDatabase();
         $scope.decrypted.selected_entry_id = null;
+    }
+
+    $scope.selectPreviousEntry = function() {
+        var index = $scope.decrypted.filtered_entries.indexOf($scope.decrypted.selected_entry_id);
+        if (index > 0) {
+            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index-1];
+        }
+    }
+
+    $scope.selectNextEntry = function() {
+        var index = $scope.decrypted.filtered_entries.indexOf($scope.decrypted.selected_entry_id);
+        if (index < $scope.decrypted.filtered_entries.length-1) {
+            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index+1];
+        }
     }
 
     $scope.entryCopy = function($event) {

@@ -87,7 +87,11 @@
 	  	</div>
 
 	 	<div id="entries_list"
-	 		 ng-click="deselectActiveEntry()">
+	 		 tabindex="5"
+	 		 ng-click="deselectActiveEntry(); $('#entries_list').focus();"
+	 		 ui-keydown="{ 'ctrl-c' : 'entryCopy($event)',
+		  		             down: 'selectNextEntry()',
+		  		             up: 'selectPreviousEntry()'}">
 		  	<ul name="entries">
 		  		<li ng-repeat="pair in decrypted.filtered_entries"
 		  		    tabindex="6"
@@ -95,10 +99,8 @@
 		  		    ng-class="{selected: pair.uuid==decrypted.selected_entry_id}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
-		  		    ui-keydown="{ 'ctrl-c' : 'entryCopy($event)',
-		  		                   down: 'decrypted.selected_entry_id += 1',
-		  		                   up: 'decrypted.selected_entry_id -= 1'}"
-		  		    ng-click="entryClicked($event)" no-propagate-click>
+		  		    ng-click="entryClicked($event); $('#entries_list').focus();"
+		  		    no-propagate-click>
 		  			<span class="entry">{{pair.object.contents.title}}</span>
 		  		</li>
 		  	</ul>

@@ -224,10 +224,7 @@ h1 {
 }
 
 .shown {
-	top: 30px;
-	bottom: 0px;
-	right: 0;
-	left: 0;
+	display: block;
 }
 
 .shownAnimation {
@@ -236,6 +233,10 @@ h1 {
 	right: 0;
 	left: 0;
 	-webkit-transition: all 0.3s ease;
+}
+
+.hidden {
+	display: none;
 }
 
 .hiddenBelow {
