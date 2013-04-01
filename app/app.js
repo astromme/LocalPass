@@ -1,4 +1,14 @@
-angular.module('localPass', ['ui']);
+var module = angular.module('localPass', ['ui'])
+
+module.directive('noPropagateClick', function() {
+    return function(scope, element, attrs) {
+        $(element).click(function(event) {
+            event.stopPropagation()
+            return false;
+        });
+    }
+})
+
 
 function generate_guid()
 {
@@ -522,7 +532,7 @@ function DatabaseControl($scope) {
         console.log('results:');
         console.log(results);
 
-        $scope.decrypted.selected_entry_id = null;
+        $scope.deselectActiveEntry();
         $scope.decrypted.filtered_entries = results;
     }
 
@@ -561,6 +571,11 @@ function DatabaseControl($scope) {
         var uuid = $event.currentTarget.attributes['uuid'].value;
         $scope.decrypted.selected_entry_id = uuid;
         $scope.databaseToEditor();
+    }
+
+    $scope.deselectActiveEntry = function() {
+        $scope.editorToDatabase();
+        $scope.decrypted.selected_entry_id = null;
     }
 
     $scope.entryCopy = function($event) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="" ng-csp>
+<html ng-app="localPass" ng-csp>
   <head>
   	<link rel="stylesheet" type="text/css" href="lib/jsoneditor/jsoneditor.css">
   	<link rel="stylesheet" type="text/css" href="lib/bootstrap/css/bootstrap.css">
@@ -71,7 +71,7 @@
 
 	<div id="content">
 	  	<div id="main_content">
-		    <div id="jsoneditor"></div>
+		    <div id="jsoneditor" ng-show="decrypted.selected_entry_id"></div>
 	  	</div>
 	</div>
 
@@ -86,7 +86,8 @@
 	  		<button id="clear_search_button" ng-click="searchString = ''" ng-show="searchString.length > 0"></button>
 	  	</div>
 
-	 	<div id="entries_list">
+	 	<div id="entries_list"
+	 		 ng-click="deselectActiveEntry()">
 		  	<ul name="entries">
 		  		<li ng-repeat="pair in decrypted.filtered_entries"
 		  		    tabindex="6"
@@ -94,10 +95,10 @@
 		  		    ng-class="{selected: pair.uuid==decrypted.selected_entry_id}"
 		  		    ng-class-odd="'odd'"
 		  		    ng-class-even="'even'"
-		  		    ui-keydown="{ ctrl-c : 'entryCopy($event)',
+		  		    ui-keydown="{ 'ctrl-c' : 'entryCopy($event)',
 		  		                   down: 'decrypted.selected_entry_id += 1',
 		  		                   up: 'decrypted.selected_entry_id -= 1'}"
-		  		    ng-mousedown="entryClicked($event)">
+		  		    ng-click="entryClicked($event)" no-propagate-click>
 		  			<span class="entry">{{pair.object.contents.title}}</span>
 		  		</li>
 		  	</ul>
