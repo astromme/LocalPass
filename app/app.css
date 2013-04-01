@@ -127,6 +127,18 @@ h1 {
 	left: 0;
 }
 
+#jsoneditor {
+	position: absolute;
+	left:0;
+	right:0;
+	top:0;
+	bottom:0;
+	z-index: 5;
+	width: 100%;
+	height: 100%;
+	clear:none;
+}
+
 @-webkit-keyframes shake {
 	0% { -webkit-transform: translate(0px, 0px); }
 	20% { -webkit-transform: translate(5px, 0px); }
@@ -252,18 +264,6 @@ h1 {
 	right: 0;
 	left: 0;
 	-webkit-transition: all 0.3s ease;
-}
-
-#jsoneditor {
-	position: absolute;
-	left:0;
-	right:0;
-	top:0;
-	bottom:0;
-	z-index: 5;
-	width: 100%;
-	height: 100%;
-	clear:none;
 }
 
 #left_sidebar {
