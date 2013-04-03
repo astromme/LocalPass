@@ -72,9 +72,9 @@
 				       ng-model="password"
 	   			       ng-disabled="!lock_screen_visible"
 				       required><br>
-				       
+
 				<input type="submit"
-				       ng-click="verifyPassword()"
+				       ng-click="verifyPassword();"
 				       name="Unlock"
 				       value="Unlock"
 				       ng-disabled="!lock_screen_visible">
@@ -86,7 +86,7 @@
 		 class="dbModalDialog shown"
 	     ng-class="dbLoadingScreenClass">
 	     <div id="loading_inner" class="dbModalDialogInner">
-	     	<h1>Loading</h1>
+	     	<h1>Loading...</h1>
 	     </div>
 	</div>
 

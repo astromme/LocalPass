@@ -249,7 +249,12 @@ function DatabaseControl($scope) {
         }
 
         chrome.syncFileSystem.requestFileSystem(function(fs) {
-            console.log('got filesystem');
+            if (fs === null) {
+                console.log("fs was null, failing");
+                return;
+            }
+
+            console.log('got filesystem: ' + fs);
             chrome.syncFileSystem.getUsageAndQuota(fs, function(storageInfo) {
                 console.log(storageInfo);
                 console.log(bytesToSize(storageInfo.usageBytes) + " used of");
@@ -377,7 +382,7 @@ function DatabaseControl($scope) {
         //console.log(data);
         try {
             var json = sjcl.decrypt($scope.decrypted.derived_key, data);
-            console.log(json);
+            //console.log(json);
         } catch(e) {
             console.log("$scope.decrypt() Error when decrypting data: " + e);
             return false;
@@ -454,7 +459,6 @@ function DatabaseControl($scope) {
             return false;
         }
 
-        console.log("Checking if encrypted_uuid decrypts to uuid");
         return ($scope.config.uuid === $scope.decrypt($scope.config.encrypted_uuid));
     }
 
