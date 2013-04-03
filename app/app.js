@@ -108,8 +108,7 @@ function CreatePasswordControl($scope) {
 
                 $scope.save('config.json', angular.toJson($scope.config), function() {
                     $scope.$apply(function() {
-                        $scope.hideWithAnimation('dbLockScreenClass');
-                        $scope.hideWithAnimation('dbPasswordCreationScreenClass');
+                        $scope.$parent.create_password_screen_visible = false;
                         $scope.password = ''
                         $scope.password_again = ''
                     });
@@ -131,7 +130,7 @@ function EnterPasswordControl($scope) {
 
             // check if the uuid decryption matches to verify the password
             try {
-                if ($scope.config.uuid != $scope.decrypt($scope.config.encrypted_uuid)) {
+                if ($scope.isLocked()) {
                     $scope.$apply(function() {
                         $scope.password = '';
                     })
@@ -141,7 +140,6 @@ function EnterPasswordControl($scope) {
                     }, 1000);
                     console.log("password is wrong");
                     return;
-
                 }
             } catch(e) {
                 console.log("error while checking password: " + e);
@@ -154,12 +152,12 @@ function EnterPasswordControl($scope) {
                     return;
                 }
                     
+                console.log("password is correct. unlocking");
+
                 $scope.$apply(function() {
-                    console.log("password is correct. unlocking");
                     $scope.password = '';
                     $('#database_locked_widget input[type=password]').blur()
-                    $scope.hideWithAnimation('dbLockScreenClass');
-                    $scope.hideWithAnimation('dbPasswordCreationScreenClass');
+                    $scope.$parent.lock_screen_visible = false;
                 });
             });
         });
@@ -168,8 +166,9 @@ function EnterPasswordControl($scope) {
 
 
 function DatabaseControl($scope) {
-    $scope.dbLockScreenClass = 'hiddenBelow';
-    $scope.dbPasswordCreationScreenClass = 'shown';
+    $scope.lock_screen_visible = false;
+    $scope.create_password_screen_visible = false;
+
 
     $scope.filesystem = null;
     $scope.config = null;    
@@ -210,7 +209,7 @@ function DatabaseControl($scope) {
 
                 console.log('showing lock screen')
                 $scope.$apply(function() {
-                    $scope.showWithAnimation('dbLockScreenClass');
+                    $scope.lock_screen_visible = true;
                 });
 
                 // once done showing, hide the loading screen class
@@ -232,7 +231,7 @@ function DatabaseControl($scope) {
                 $scope.initializeDecryptedSection();
 
                 $scope.$apply(function() {
-                    $scope.showWithAnimation('dbPasswordCreationScreenClass');
+                    $scope.create_password_screen_visible = true;
                 });
             
                 // once done showing, hide the loading screen class
@@ -443,16 +442,24 @@ function DatabaseControl($scope) {
         delete $scope.decrypted;
         $scope.initializeDecryptedSection();
 
-        $scope.showWithAnimation('dbLockScreenClass');
-        $scope.dbSelectionVisible = true;
+        $scope.lock_screen_visible = true;
+    }
+
+    $scope.isUnlocked = function() {
+        if (!$scope.decrypted) {
+            return false;
+        }
+
+        if (!$scope.decrypted.derived_key) {
+            return false;
+        }
+
+        console.log("Checking if encrypted_uuid decrypts to uuid");
+        return ($scope.config.uuid === $scope.decrypt($scope.config.encrypted_uuid));
     }
 
     $scope.isLocked = function() {
-        if (!$scope.decrypted) {
-            return true;
-        }
-
-        return !$scope.decrypted.derived_key;
+        return !$scope.isUnlocked();
     }
 
     $scope.filename = function(object) {

@@ -30,33 +30,54 @@
 	</div>
 
 	<div id="database_password_creation_widget"
-		 class="dbModalDialog hiddenBelow"
-	     ng-class="dbPasswordCreationScreenClass">
+		 class="dbModalDialog hidden"
+	     ng-show="create_password_screen_visible">
 	    <div id='database_password_creation_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
 			<h2>Set the database password</h2>
-			<form name="createPasswordForm" ng-controller="CreatePasswordControl" novalidate>
-				Password: <input type="password" ng-model="password" required><br />
-				Password (again): <input type="password" ng-model="password_again" required>
+			<form name="createPasswordForm"
+			      ng-controller="CreatePasswordControl"
+			      novalidate>
+				Password:         <input type="password" 
+				        		         ng-model="password"
+				           		         ng-disabled="!create_password_screen_visible"
+				        		         required><br />
+				Password (again): <input type="password"
+				 						 ng-model="password_again"
+				 						 ng-disabled="!create_password_screen_visible"
+				 						 required>
 				<span class="error"
 				      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
 
-		 		<input type="submit" ng-click="verifyPasswordCreation()" name="Set Password">
+		 		<input type="submit"
+		 		       ng-click="verifyPasswordCreation()"
+		 		       name="Set Password"
+		 		       ng-disabled="!create_password_screen_visible">
 		 	</form>
 		 </div>
 	</div>
 
 	<div id="database_locked_widget"
-		 class="dbModalDialog hiddenBelow"
-	     ng-class="dbLockScreenClass">
+		 class="dbModalDialog"
+	     ng-show="lock_screen_visible">
 	    <div id='database_locked_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
 			<h2>The database is locked</h2>
 			<form id="database_locked_widget_form"
-			      name="enterPasswordForm" ng-controller="EnterPasswordControl" novalidate>
+			      name="enterPasswordForm"
+			      ng-controller="EnterPasswordControl"
+			      novalidate>
 				<h3>Master Password</h3>
-				<input type="password" ng-model="password" required><br>
-				<input type="submit" ng-click="verifyPassword()" name="Unlock" value="Unlock">
+				<input type="password"
+				       ng-model="password"
+	   			       ng-disabled="!lock_screen_visible"
+				       required><br>
+				       
+				<input type="submit"
+				       ng-click="verifyPassword()"
+				       name="Unlock"
+				       value="Unlock"
+				       ng-disabled="!lock_screen_visible">
 			</form>
 		</div>
 	</div>
