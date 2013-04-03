@@ -104,7 +104,7 @@
 	  		       ng-model="searchString"
 	  		       ng-change="updateSearch()"
 	  		       placeholder="search..."></input>
-	  		<button id="clear_search_button" ng-click="searchString = ''" ng-show="searchString.length > 0"></button>
+	  		<button id="clear_search_button" ng-click="searchString = ''; updateSearch();" ng-show="searchString.length > 0"></button>
 	  	</div>
 
 	 	<div id="entries_list"
