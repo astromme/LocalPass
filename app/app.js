@@ -132,7 +132,7 @@ function EnterPasswordControl($scope) {
             try {
                 if ($scope.isLocked()) {
                     $scope.$apply(function() {
-                        $scope.password = '';
+                        $('#database_locked_widget input[type=password]').select()
                     })
                     $('#database_locked_widget_form').addClass('shake')
                     setTimeout(function() {
