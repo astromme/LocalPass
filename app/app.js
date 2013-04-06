@@ -187,7 +187,7 @@ function DatabaseControl($scope) {
             $scope.filesystem.root.getFile('config.json', {create: true}, function(f) {
                 f.file(function (file) {
                     var reader = new FileReader();
-                    reader.onloadend = function() {
+                    reader.onload = function() {
                         console.log('got config');
                         try {
                             $scope.config = angular.fromJson(this.result);
@@ -198,6 +198,16 @@ function DatabaseControl($scope) {
                         }
                         parse_config();
                     }
+
+                    reader.onerror = function() {
+                        console.log("reading config errored:");
+                        console.log(reader.error);
+                    }
+
+                    reader.onabort = function() {
+                        console.log("reading config aborted");
+                    }
+
                     reader.readAsText(file);
                 });
             }, createErrorHandler("while getting config"));  
