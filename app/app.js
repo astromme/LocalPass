@@ -192,6 +192,8 @@ function DatabaseControl($scope) {
                         try {
                             $scope.config = angular.fromJson(this.result);
                         } catch(e) {
+                            console.log("Parsing config failed. Config was:");
+                            console.log(this.result);
                             $scope.config = angular.fromJson('{}');
                         }
                         parse_config();
@@ -230,6 +232,7 @@ function DatabaseControl($scope) {
                 $scope.config.uuid = generate_guid();
                 $scope.initializeDecryptedSection();
 
+                console.log('showing password create screen');
                 $scope.$apply(function() {
                     $scope.create_password_screen_visible = true;
                 });
