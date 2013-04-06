@@ -418,11 +418,15 @@ function DatabaseControl($scope) {
                         readAsText(entry, function(contents) {
                             var e = angular.fromJson($scope.decrypt(contents));
                             console.log(e);
-                            try {
-                                $scope.decrypted.cache[e.uuid] = e;
-                            } catch(e) {
-                                console.log("error decrypting entry: " + e);
+
+                            if (e) {
+                                try {
+                                    $scope.decrypted.cache[e.uuid] = e;
+                                } catch(e) {
+                                    console.log("error decrypting entry: " + e);
+                                }  
                             }
+
 
                             numberRead += 1;
                             if (numberRead == entries.length-1) { // config.json is skipped
