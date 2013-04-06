@@ -7,8 +7,6 @@ LocalPass is a password manager app written using the Chrome packaged app platfo
 Installation
 ------------
 
-*"Just tell me how to run it already"*
-
 * Install [Chrome Canary][canary-dl]
 * Enable "Experimental Extension APIs" in chrome://flags
 * Download [this zip of LocalPass][localpass-dl]
