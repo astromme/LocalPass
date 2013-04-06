@@ -16,4 +16,7 @@ chrome.syncFileSystem.onServiceStatusChanged.addListener(function(service_info) 
 chrome.syncFileSystem.onFileStatusChanged.addListener(function(file_info) {
 	console.log("file status changed");
 	console.log(file_info);
+	if (file_info.direction == 'remote_to_local') {
+		chrome.runtime.sendMessage({'type' : 'local_file_status_changed'});
+	}
 });

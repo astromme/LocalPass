@@ -182,6 +182,12 @@ function DatabaseControl($scope) {
     $scope.init = function() {
         console.log('init');
 
+        chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+            if (message.type = "local_file_status_changed") {
+                $scope.updateCache(function() {});
+            }    
+        });
+
         var get_config = function() {
             console.log('getting config');
             $scope.filesystem.root.getFile('config.json', {create: true}, function(f) {
