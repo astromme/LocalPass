@@ -19,14 +19,16 @@
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl" ng-init="init()">
-  	<div id="header">
+  	<div id="header" class="drag">
 	  	<h1>LocalPass</h1>
 	  	<span>{{status_message}}</span>
-		<div class="buttonbox">
+		<div class="buttonbox no-drag">
 			<button tabindex="2" ng-click="import()" ng-hide="isLocked()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
 		 </div>
-	  	<button id="close_window_button" ng-click="closeWindow()"></button>
+	  	<button id="close_window_button"
+	  	        class="no-drag"
+	  	        ng-click="closeWindow()"></button>
 	</div>
 
 	<div id="database_password_creation_widget"
