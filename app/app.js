@@ -200,6 +200,7 @@ function DatabaseControl($scope) {
                         } catch(e) {
                             console.log("Parsing config failed. Config was:");
                             console.log(this.result);
+                            console.log(this.error);
                             $scope.config = angular.fromJson('{}');
                         }
                         parse_config();
