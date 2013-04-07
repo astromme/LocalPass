@@ -522,6 +522,31 @@ function DatabaseControl($scope) {
         $scope.newEntryTitle = '';
     }
 
+    $scope.deleteEntryWithID = function(id, suppressUpdatingSearch) {
+        var filename = $scope.filename($scope.entry(uuid));
+
+        $scope.filesystem.root.getFile(filename, {create: false}, function(fileEntry) {
+
+            fileEntry.remove(function() {
+                delete $scope.decrypted.cache[id];
+                console.log('File removed.');
+
+                if (!suppressUpdatingSearch) {
+                    $scope.$apply(function() {
+                        $scope.updateSearch();
+                    });
+                }
+
+            }, createErrorHandler("deleting file"));
+
+        }, createErrorHandler("getting handle of file to delete"));
+    }
+
+    $scope.deleteEntryClicked = function() {
+        console.log("deleteEntryClickedd()");
+        $scope.deleteEntryWithID($scope.decrypted.selected_entry_id);
+    }
+
     $scope.entry = function(id) {
         return $scope.decrypted.cache[id];
     }
