@@ -323,7 +323,23 @@ h1 {
 
 .entry {
 	padding-left: 5px;
-	padding-right: 5px;
+	width: 171px;
+	display: inline-block;
+}
+
+#delete_entry_button {
+	float: right;
+	margin: 0 0 0 0;
+	padding: 0 0 0 0;
+	border: none;
+	width: 20px;
+	height: 20px;
+	background:url(close_light.png) no-repeat;
+}
+
+#delete_entry_button:hover {
+	background:url(close_light.png) no-repeat;
+	background-color: blue;
 }
 
 #left_sidebar *:focus {
