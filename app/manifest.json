@@ -3,7 +3,7 @@
   "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/aGrL3gFPTlRVuRRBk/5q3e0VtyzANK/HpEXncwWh+ExcoTPzc8WSn2sS42bJgGxfJWckayGRakmSkuWrFog3Une/fRIsLI/FD3AdctYeBLtoRaD7P6Lo4d23cllYNPZYNVQb70/KZKogzw+euGDH19jrrz5X8f9Aj7whQjyy/QIDAQAB",
   "description": "A local password manager app",
   "manifest_version": 2,
-  "version": "0.2.3",
+  "version": "0.2.4",
   "offline_enabled": true,
   "minimum_chrome_version": "27",
   "app": {
