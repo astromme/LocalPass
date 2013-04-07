@@ -341,6 +341,17 @@ function DatabaseControl($scope) {
             extensions: ['js', 'css', 'txt', 'html', 'xml', 'tsv', 'csv', 'rtf']
         }];
 
+        var translation = {
+            "lastaccess": "last_access",
+            "lastmod": "last_modification",
+        };
+
+        var root_level_keys = [
+            "creation",
+            "last_access",
+            "last_modification",
+        ];
+
         chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function(readOnlyEntry) {
             if (!readOnlyEntry) {
                 return;
@@ -361,17 +372,29 @@ function DatabaseControl($scope) {
                             if (!entries) { entries = Object({}) }
                             if (!entries.forEach) { entries = [entries]; }
                             entries.forEach(function(entry) {
-                                entry.tags = [prefixString + group.title];
-                                var db_entry = $scope.createNewEntry(entry, true /*suppress updating search */);
+                                entry.labels = [prefixString + group.title];
 
-                                //TODO: update for new entry/object system
+                                // process translations
+                                for (key in translation) {
+                                    // skip translations that don't do anything
+                                    if (key == translation[key]) {
+                                        continue;
+                                    }
 
-                                // db_entry.creation = db_entry.contents.creation;
-                                // db_entry.last_access = db_entry.contents.lastaccess;
-                                // db_entry.last_modification = db_entry.contents.lastmod;
-                                // delete db_entry.contents.creation;
-                                // delete db_entry.contents.lastaccess;
-                                // delete db_entry.contents.lastmod;
+                                    entry[translation[key]] = entry[key];
+                                    delete entry[key];
+                                }
+
+                                var root_keys = {};
+
+                                //process keys that need to be moved to the root
+                                for (var i=0; i<root_level_keys.length; i++) {
+                                    var key = root_level_keys[i];
+                                    root_keys[key] = entry[key];
+                                    delete entry[key];
+                                }
+
+                                $scope.createNewEntry(entry, root_keys, true /*suppress updating search */);
                             });
 
                             if (group.group) {
@@ -497,10 +520,13 @@ function DatabaseControl($scope) {
         return object.uuid;
     }
 
-    $scope.createNewEntry = function(contents, suppressUpdatingSearch) {
+    $scope.createNewEntry = function(contents, root_level_keys, suppressUpdatingSearch) {
         var entry = Object();
         entry.uuid = generate_guid();
         entry.contents = contents;
+        for (key in root_level_keys) {
+            entry[key] = root_level_keys[key];
+        }
 
         var c = $scope.encrypt(entry);
         $scope.save($scope.filename(entry), c, function() {
@@ -589,8 +615,8 @@ function DatabaseControl($scope) {
         }
 
         results.sort();
-        console.log('results:');
-        console.log(results);
+        console.log(results.length + ' results:');
+        //console.log(results);
 
         $scope.deselectActiveEntry();
         $scope.decrypted.filtered_entries = results;
