@@ -175,12 +175,19 @@ function DatabaseControl($scope) {
     $scope.database = null;
     $scope.decrypted = null;
 
-    $scope.editor = new JSONEditor(document.getElementById("jsoneditor"));
+    $scope.editor = null;
     $scope.status_message = ''; // shown to the user as feedback
     
 
     $scope.init = function() {
         console.log('init');
+
+        $scope.editor = new JSONEditor(document.getElementById("jsoneditor"),
+                                   {
+                                    'mode': 'editor',
+                                    'history': true,
+                                    'change': $scope.onEditorChange
+                                   });
 
         chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             if (message.type = "local_file_status_changed") {
@@ -581,9 +588,12 @@ function DatabaseControl($scope) {
         $scope.filesystem.root.getFile(filename, {create: true}, function(file) {
             file.createWriter(function (fileWriter) {
                 var blob = new Blob([contents], {type: 'text/plain'});
-                fileWriter.onwriteend = function() {
+                fileWriter.onwrite = function() {
                     callback();
                 }
+
+                fileWriter.onerror = createErrorHandler("write failed: " + filename);
+
                 fileWriter.write(blob);
             });
         }, createErrorHandler("saving file", filename));
@@ -626,8 +636,18 @@ function DatabaseControl($scope) {
         $scope.search($scope.searchString);
     }
 
+    $scope.onEditorChange = function() {
+        console.log("editor change"); //: " + $scope.editor.history);
+        // console.log(params);
+        $scope.$apply(function() {
+            $scope.status_message = '';
+        });
+    }
+
     $scope.editorToDatabase = function() {
         if ($scope.decrypted.selected_entry_id) {
+            $scope.status_message = "saving...";
+
             // Update the cache
             $scope.decrypted.selected_entry.contents = $scope.editor.get();
             $scope.decrypted.cache[$scope.decrypted.selected_entry_id] = $scope.decrypted.selected_entry;
@@ -637,7 +657,10 @@ function DatabaseControl($scope) {
 
             // Save
             $scope.save($scope.filename($scope.decrypted.selected_entry), encrypted, function() {
-
+                console.log("all changes saved");
+                $scope.$apply(function() {
+                    $scope.status_message = 'all changes saved.';
+                });
             });
         }
     }
