@@ -624,7 +624,22 @@ function DatabaseControl($scope) {
             }
         }
 
-        results.sort();
+        results.sort(function(a,b) {
+            var a = a.object.contents.title;
+            var b = b.object.contents.title;
+
+            if (a) { a = a.toLowerCase(); }
+            if (b) { b = b.toLowerCase(); }
+
+            if (a == b) {
+                return 0;
+            } else if (a < b) {
+                return -1;
+            } else {
+                return 1;
+            }
+        });
+
         console.log(results.length + ' results:');
         //console.log(results);
 
