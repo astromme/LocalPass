@@ -19,6 +19,8 @@
     <script type="text/javascript" src="app.js"></script>
   </head>
   <body ng-controller="DatabaseControl" ng-init="init()">
+  	<input type="text" id="hidden_copy_helper" class="display:none;"></input>
+
   	<div id="header" class="drag">
 	  	<h1>LocalPass</h1>
 	  	<span>{{status_message}}</span>
@@ -113,9 +115,8 @@
 	 		 tabindex="5"
 	 		 ng-click="deselectActiveEntry(); $('#entries_list').focus();">
 		  	<ul name="entries"
-		  		ui-keydown="{ 'ctrl-c' : 'entryCopy($event); $event.preventDefault();',
-		  		             down: 'selectNextEntry(); $event.preventDefault();',
-		  		             up: 'selectPreviousEntry(); $event.preventDefault();'}">
+		  		ui-keydown="{ down: 'selectNextEntry(); $event.preventDefault();',
+		  		              up: 'selectPreviousEntry(); $event.preventDefault();'}">
 		  		<li ng-repeat="pair in decrypted.filtered_entries"
 		  		    tabindex="6"
 		  		    id="{{pair.uuid}}"

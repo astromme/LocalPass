@@ -177,10 +177,19 @@ function DatabaseControl($scope) {
 
     $scope.editor = null;
     $scope.status_message = ''; // shown to the user as feedback
+
+    $scope.database_root = "default";
     
 
     $scope.init = function() {
         console.log('init');
+
+        $('#entries_list ul').keydown(function (e) {
+            if ((e.which == 67 /* c */) && e.metaKey) {
+                $scope.entryCopy(e)
+                e.preventDefault();
+            }
+        });
 
         $scope.editor = new JSONEditor(document.getElementById("jsoneditor"),
                                    {
@@ -751,7 +760,25 @@ function DatabaseControl($scope) {
     }
 
     $scope.entryCopy = function($event) {
-        console.log($event);
+        console.log("entryCopy()");
+        var copy_helper = document.getElementById("hidden_copy_helper");
+        var data = undefined;
+        if ($event.shiftKey) {
+            data = $scope.decrypted.selected_entry.contents.username;
+        } else {
+            var data = $scope.decrypted.selected_entry.contents.password;
+        }
+        if (data === undefined) {
+            copy_helper.value = "";
+            console.log("can't copy empty string");
+            //TODO: Show visible feedback when an entry doesn't have a username/password
+        } else {
+            copy_helper.value = data;
+        }
+        copy_helper.select();
+        document.execCommand('copy', false, null);
+        copy_helper.value = '';
+        $('#'+$scope.decrypted.selected_entry_id).focus();
     }
 
     $scope.showWithAnimation = function(variable) {
