@@ -703,17 +703,50 @@ function DatabaseControl($scope) {
         $scope.decrypted.selected_entry_id = null;
     }
 
+    $scope.indexInFilteredEntries = function(entry_id) {
+        for (var i=0; i<$scope.decrypted.filtered_entries.length; i++) {
+            if ($scope.decrypted.filtered_entries[i].uuid == entry_id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     $scope.selectPreviousEntry = function() {
-        var index = $scope.decrypted.filtered_entries.indexOf($scope.decrypted.selected_entry_id);
+        console.log("selectPreviousEntry()");
+        var index = $scope.indexInFilteredEntries($scope.decrypted.selected_entry_id);
         if (index > 0) {
-            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index-1];
+            $scope.editorToDatabase();
+            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index-1].uuid;
+            $scope.databaseToEditor();
+
+            var container = $('#entries_list');
+            var item = $('#'+$scope.decrypted.selected_entry_id);
+
+            var element_at_top = item.offset().top - container.offset().top + container.scrollTop();
+
+            if (container.scrollTop() > element_at_top) {
+                container.scrollTop(element_at_top);
+            }
         }
     }
 
     $scope.selectNextEntry = function() {
-        var index = $scope.decrypted.filtered_entries.indexOf($scope.decrypted.selected_entry_id);
+        console.log("selectNextEntry()");
+        var index = $scope.indexInFilteredEntries($scope.decrypted.selected_entry_id);
         if (index < $scope.decrypted.filtered_entries.length-1) {
-            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index+1];
+            $scope.editorToDatabase();
+            $scope.decrypted.selected_entry_id = $scope.decrypted.filtered_entries[index+1].uuid;
+            $scope.databaseToEditor();
+
+            var container = $('#entries_list');
+            var item = $('#'+$scope.decrypted.selected_entry_id);
+
+            var element_at_bottom = item.offset().top - container.offset().top + container.scrollTop() - container.height() + item.height();
+            
+            if (container.scrollTop() < element_at_bottom) {
+                container.scrollTop(element_at_bottom);
+            }
         }
     }
 
