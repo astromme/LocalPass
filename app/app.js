@@ -670,6 +670,7 @@ function DatabaseControl($scope) {
             // Use the cached version
             $scope.decrypted.selected_entry = $scope.decrypted.cache[$scope.decrypted.selected_entry_id];
             $scope.editor.set($scope.decrypted.selected_entry.contents);
+            $scope.editor.setName($scope.decrypted.selected_entry.contents.title);
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
