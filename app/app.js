@@ -628,8 +628,9 @@ function DatabaseControl($scope) {
     }
 
     $scope.deleteEntryWithID = function(id, suppressUpdatingSearch) {
-        var filename = $scope.filename($scope.entry(uuid));
+        var filename = $scope.filename($scope.entry(id));
 
+        console.log("removing " + filename);
         $scope.filesystem.root.getFile(filename, {create: false}, function(fileEntry) {
 
             fileEntry.remove(function() {
@@ -648,7 +649,7 @@ function DatabaseControl($scope) {
     }
 
     $scope.deleteEntryClicked = function() {
-        console.log("deleteEntryClickedd()");
+        console.log("deleteEntryClicked()");
         $scope.deleteEntryWithID($scope.decrypted.selected_entry_id);
     }
 

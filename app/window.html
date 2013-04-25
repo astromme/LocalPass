@@ -25,6 +25,10 @@
 	  	<h1>LocalPass</h1>
 	  	<span>{{status_message}}</span>
 		<div class="buttonbox no-drag">
+			<button tabindex="1"
+			        ng-click="deleteEntryClicked()"
+			        ng-hide="isLocked() || !decrypted.selected_entry_id">
+			        Delete</button>
 			<button tabindex="2" ng-click="import()" ng-hide="isLocked()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
 		 </div>
