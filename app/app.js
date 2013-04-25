@@ -747,6 +747,7 @@ function DatabaseControl($scope) {
             $scope.decrypted.selected_entry = $scope.decrypted.cache[$scope.decrypted.selected_entry_id];
             $scope.editor.set($scope.decrypted.selected_entry.contents);
             $scope.editor.setName($scope.decrypted.selected_entry.contents.title);
+            $scope.editor.expandAll();
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
