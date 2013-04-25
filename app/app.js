@@ -386,6 +386,12 @@ function DatabaseControl($scope) {
                         if (!groups) { return; }
                         if (!groups.forEach) { groups = [groups]; };
                         groups.forEach(function(group) {
+                            if (prefixString == "" && group.title == "Backup") {
+                                // skip backup entries because I
+                                // don't know what to do with them
+                                // TODO: try and reconstruct history? Sounds hard.
+                                return;
+                            }
                             var entries = group.entry;
                             if (!entries) { entries = Object({}) }
                             if (!entries.forEach) { entries = [entries]; }
