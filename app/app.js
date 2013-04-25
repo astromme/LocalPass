@@ -458,6 +458,50 @@ function DatabaseControl($scope) {
         return angular.fromJson(json);
     }
 
+    $scope.removeAllEntries = function(callback) {
+        var dirReader = $scope.filesystem.root.createReader();
+        var entries = [];
+        var numberRemoved = 0;
+
+        // Call the reader.readEntries() until no more results are returned.
+        var readEntries = function() {
+            dirReader.readEntries (function(results) {
+                if (!results.length) {
+                    console.log('entries:');
+                    console.log(entries);
+
+                    if (entries.length == 1) {
+                        // it should just be config.json
+                        $scope.updateSearch();
+                        return callback();
+                    }
+
+                    entries.forEach(function(entry, i) {
+                        if (entry.name == "config.json") { return; }
+
+                        entry.remove(function() {
+                            console.log("removed");
+
+                            numberRemoved += 1;
+                            if (numberRemoved == entries.length-1) { // config.json is skipped
+                                // finished. update search then callback
+
+                                $scope.updateSearch();
+                                return callback();
+                            }
+                        }, createErrorHandler("removing entry"));
+                    });
+                } else {
+                    entries = entries.concat(toArray(results));
+                    readEntries();
+                }
+            }, createErrorHandler("while parsing directory tree in $scope.updateCache()"));
+        };
+
+        console.log("reading objects/")
+        readEntries(); // Start reading dirs.
+    }
+
     $scope.updateCache = function(callback) {
         var dirReader = $scope.filesystem.root.createReader();
         var entries = [];
