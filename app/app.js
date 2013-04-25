@@ -381,10 +381,18 @@ function DatabaseControl($scope) {
                     var xmlDoc = parser.parseFromString(result,"text/xml");
                     var json = angular.fromJson(xml2json(xmlDoc, ''));
 
-                    var handleSubgroups = function(object, prefixString) {
-                        var groups = object.group;
-                        if (!groups) { return; }
-                        if (!groups.forEach) { groups = [groups]; };
+                    var handleGroup = function(object, prefixString) {
+                        if (!object) { return; }
+
+                        var groups;
+                        if (object.forEach) {
+                            groups = object;
+                        } else {
+                            groups = [object];
+                        };
+
+                        console.log(prefixString + " groups: " + groups);
+
                         groups.forEach(function(group) {
                             if (prefixString == "" && group.title == "Backup") {
                                 // skip backup entries because I
@@ -392,42 +400,54 @@ function DatabaseControl($scope) {
                                 // TODO: try and reconstruct history? Sounds hard.
                                 return;
                             }
-                            var entries = group.entry;
-                            if (!entries) { entries = Object({}) }
-                            if (!entries.forEach) { entries = [entries]; }
-                            entries.forEach(function(entry) {
-                                entry.labels = [prefixString + group.title];
 
-                                // process translations
-                                for (key in translation) {
-                                    // skip translations that don't do anything
-                                    if (key == translation[key]) {
-                                        continue;
-                                    }
-
-                                    entry[translation[key]] = entry[key];
-                                    delete entry[key];
-                                }
-
-                                var root_keys = {};
-
-                                //process keys that need to be moved to the root
-                                for (var i=0; i<root_level_keys.length; i++) {
-                                    var key = root_level_keys[i];
-                                    root_keys[key] = entry[key];
-                                    delete entry[key];
-                                }
-
-                                $scope.createNewEntry(entry, root_keys, true /*suppress updating search */);
-                            });
-
-                            if (group.group) {
-                                handleSubgroups(group, prefixString + group.title + '/');
-                            }
+                            handleEntry(group.entry, prefixString + group.title + '/');
+                            handleGroup(group.group, prefixString + group.title + '/');
                         });
-                    }
+                    };
 
-                    handleSubgroups(json.database, '');
+                    var handleEntry = function(object, prefixString) {
+                        if (!object) {
+                            return;
+                        }
+
+                        var entries;
+                        if (object.forEach) {
+                            entries = object;
+                        } else {
+                            entries = [object];
+                        }
+
+                        console.log(prefixString + " entries: " + entries);
+
+                        entries.forEach(function(entry) {
+                            entry.labels = [prefixString];
+
+                            // process translations
+                            for (key in translation) {
+                                // skip translations that don't do anything
+                                if (key == translation[key]) {
+                                    continue;
+                                }
+
+                                entry[translation[key]] = entry[key];
+                                delete entry[key];
+                            }
+
+                            var root_keys = {};
+
+                            //process keys that need to be moved to the root
+                            for (var i=0; i<root_level_keys.length; i++) {
+                                var key = root_level_keys[i];
+                                root_keys[key] = entry[key];
+                                delete entry[key];
+                            }
+
+                            $scope.createNewEntry(entry, root_keys, true /*suppress updating search */);
+                        });
+                    };
+
+                    handleGroup(json.database.group, '');
 
                     $scope.$apply(function() {
                         $scope.updateSearch();
