@@ -478,7 +478,7 @@ function DatabaseControl($scope) {
         return angular.fromJson(json);
     }
 
-    $scope.removeAllEntries = function(callback) {
+    $scope.removeAllEntries = function() {
         var processEntries = function(entries) {
             var numberRemoved = 0;
 
@@ -503,7 +503,7 @@ function DatabaseControl($scope) {
                 }
 
                 processEntries(entries);
-                
+
             }, createErrorHandler("while parsing directory tree in $scope.removeAllEntries()"));
         };
 
