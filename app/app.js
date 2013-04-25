@@ -1,4 +1,5 @@
 var module = angular.module('localPass', ['ui', 'ui.directives'])
+var controller = null;
 
 module.directive('noPropagateClick', function() {
     return function(scope, element, attrs) {
@@ -183,6 +184,7 @@ function DatabaseControl($scope) {
 
     $scope.init = function() {
         console.log('init');
+        controller = $scope;
 
         $('#entries_list ul').keydown(function (e) {
             if ((e.which == 67 /* c */) && e.metaKey) {
