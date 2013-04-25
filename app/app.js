@@ -681,13 +681,13 @@ function DatabaseControl($scope) {
 
         var results = [];
         if (!query) {
-            for (uuid in $scope.decrypted.cache) {
+            for (var uuid in $scope.decrypted.cache) {
                 results.push(new Object({'uuid':uuid, 'object': $scope.entry(uuid)}));
             }
         } else {
             var search = query.toLowerCase();
 
-            for (uuid in $scope.decrypted.cache) {
+            for (var uuid in $scope.decrypted.cache) {
                 var object = $scope.entry(uuid);
                 var field = String(object.contents.title).toLowerCase();
                 index = field.indexOf(search);
