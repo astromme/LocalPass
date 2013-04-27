@@ -360,101 +360,34 @@ function DatabaseControl($scope) {
             extensions: ['js', 'css', 'txt', 'html', 'xml', 'tsv', 'csv', 'rtf']
         }];
 
-        var translation = {
-            "lastaccess": "last_access",
-            "lastmod": "last_modification",
-        };
 
-        var root_level_keys = [
-            "creation",
-            "last_access",
-            "last_modification",
-        ];
 
         chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function(readOnlyEntry) {
             if (!readOnlyEntry) {
                 return;
             }
 
+            // get the file
             readOnlyEntry.file(function(file) {
+
+                // read it
                 readAsText(readOnlyEntry, function(result) {
-                    var parser = new DOMParser();
-                    var xmlDoc = parser.parseFromString(result,"text/xml");
-                    var json = angular.fromJson(xml2json(xmlDoc, ''));
 
-                    var handleGroup = function(object, prefixString) {
-                        if (!object) { return; }
+                    // parse the KeyPassX xml
+                    parse_keypassx_xml(result,
 
-                        var groups;
-                        if (object.forEach) {
-                            groups = object;
-                        } else {
-                            groups = [object];
-                        };
+                        // on_each_entry_callback
+                        function(entry, entry_root_keys, callback) {
+                            $scope.createNewEntry(entry, entry_root_keys, callback);
+                        }, 
 
-                        console.log(prefixString + " groups: " + groups);
-
-                        groups.forEach(function(group) {
-                            if (prefixString == "" && group.title == "Backup") {
-                                // skip backup entries because I
-                                // don't know what to do with them
-                                // TODO: try and reconstruct history? Sounds hard.
-                                return;
-                            }
-
-                            handleEntry(group.entry, prefixString + group.title + '/');
-                            handleGroup(group.group, prefixString + group.title + '/');
+                        // on_finished_callback
+                        function() {
+                           $scope.$apply(function() {
+                                $scope.updateSearch();
+                            });
                         });
-                    };
-
-                    var handleEntry = function(object, prefixString) {
-                        if (!object) {
-                            return;
-                        }
-
-                        var entries;
-                        if (object.forEach) {
-                            entries = object;
-                        } else {
-                            entries = [object];
-                        }
-
-                        console.log(prefixString + " entries: " + entries);
-
-                        entries.forEach(function(entry) {
-                            entry.labels = [prefixString];
-
-                            // process translations
-                            for (key in translation) {
-                                // skip translations that don't do anything
-                                if (key == translation[key]) {
-                                    continue;
-                                }
-
-                                entry[translation[key]] = entry[key];
-                                delete entry[key];
-                            }
-
-                            var root_keys = {};
-
-                            //process keys that need to be moved to the root
-                            for (var i=0; i<root_level_keys.length; i++) {
-                                var key = root_level_keys[i];
-                                root_keys[key] = entry[key];
-                                delete entry[key];
-                            }
-
-                            $scope.createNewEntry(entry, root_keys, true /*suppress updating search */);
-                        });
-                    };
-
-                    handleGroup(json.database.group, '');
-
-                    $scope.$apply(function() {
-                        $scope.updateSearch();
-                    });
                 });
-
             });
         });
     }
@@ -600,7 +533,7 @@ function DatabaseControl($scope) {
         return object.uuid;
     }
 
-    $scope.createNewEntry = function(contents, root_level_keys, suppressUpdatingSearch) {
+    $scope.createNewEntry = function(contents, root_level_keys, callback) {
         var entry = Object();
         entry.uuid = generate_guid();
         entry.contents = contents;
@@ -613,18 +546,18 @@ function DatabaseControl($scope) {
             // Update the cache
             $scope.decrypted.cache[entry.uuid] = entry;
 
-            if (!suppressUpdatingSearch) {
-                $scope.$apply(function() {
-                   $scope.updateSearch();
-                });
-            }
+            callback();
         });
     }
 
     $scope.addEntryClicked = function() {
         console.log("addEntryClicked()");
         $scope.editorToDatabase();
-        $scope.createNewEntry({'title': $scope.newEntryTitle});
+        $scope.createNewEntry({'title': $scope.newEntryTitle}, function() {
+            $scope.$apply(function() {
+                $scope.updateSearch();
+            });
+        });
         $scope.newEntryTitle = '';
     }
 
