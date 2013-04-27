@@ -167,6 +167,7 @@ function EnterPasswordControl($scope) {
 
 
 function DatabaseControl($scope) {
+    $scope.loading_screen_visible = true;
     $scope.lock_screen_visible = false;
     $scope.create_password_screen_visible = false;
 
@@ -253,7 +254,7 @@ function DatabaseControl($scope) {
                 $('#database_locked_widget').one('webkitTransitionEnd', function(e) {
                     console.log("hiding loading screen class");
                     $scope.$apply(function() {
-                        $scope.hide('dbLoadingScreenClass');
+                        $scope.loading_screen_visible = false;
                     });
                 });
 
@@ -276,7 +277,7 @@ function DatabaseControl($scope) {
                 $('#database_password_creation_widget').one('webkitTransitionEnd', function(e) {
                     console.log("hiding loading screen class");
                     $scope.$apply(function() {
-                        $scope.hide('dbLoadingScreenClass');
+                        $scope.loading_screen_visible = false;
                     });
                 });
   
@@ -845,21 +846,4 @@ function DatabaseControl($scope) {
         copy_helper.value = '';
         $('#'+$scope.decrypted.selected_entry_id).focus();
     }
-
-    $scope.showWithAnimation = function(variable) {
-        $scope[variable] = 'shownAnimation';
-    }
-    
-    $scope.show = function(variable) {
-        $scope[variable] = 'shown';
-    }
-
-    $scope.hideWithAnimation = function(variable) {
-        $scope[variable] = 'hiddenBelowAnimation';
-    }
-
-    $scope.hide = function(variable) {
-        $scope[variable] = 'hiddenBelow';
-    }
-
 }

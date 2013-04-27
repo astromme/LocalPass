@@ -231,52 +231,6 @@ h1 {
 	float: right;
 }
 
-.shown {
-	display: block;
-}
-
-.shownAnimation {
-	top: 30px;
-	bottom: 0px;
-	right: 0;
-	left: 0;
-	-webkit-transition: all 0.3s ease;
-}
-
-.hidden {
-	display: none;
-}
-
-.hiddenBelow {
-	top: 100%;
-	bottom: 0px;
-	right: 0;
-	left: 0;
-}
-
-.hiddenBelowAnimation {
-	top: 100%;
-	bottom: 0px;
-	right: 0;
-	left: 0;
-	-webkit-transition: all 0.3s ease;
-}
-
-.hiddenAbove {
-	top: 30px;
-	bottom: -100%;
-	right: 0;
-	left: 0;
-}
-
-.hiddenAboveAnimation {
-	top: 30px;
-	bottom: -100%;
-	right: 0;
-	left: 0;
-	-webkit-transition: all 0.3s ease;
-}
-
 #left_sidebar {
 	float: left;
 	width: 200px;
