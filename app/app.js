@@ -132,6 +132,7 @@ function EnterPasswordControl($scope) {
             // check if the uuid decryption matches to verify the password
             try {
                 if ($scope.isLocked()) {
+                    $scope.initializeDecryptedSection();
                     $scope.$apply(function() {
                         $('#database_locked_widget input[type=password]').select()
                     })
