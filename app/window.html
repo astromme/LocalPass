@@ -68,7 +68,8 @@
 
 	<div id="database_locked_widget"
 		 class="dbModalDialog"
-	     ng-show="lock_screen_visible">
+	     ng-show="lock_screen_visible"
+	     ng-click="focusLockPasswordInput()">
 	    <div id='database_locked_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
 			<h2>The database is locked</h2>

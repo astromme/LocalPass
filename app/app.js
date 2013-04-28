@@ -502,6 +502,10 @@ function DatabaseControl($scope) {
         readEntries(); // Start reading dirs.
     }
 
+    $scope.focusLockPasswordInput = function() {
+        $('#database_locked_widget input[type=password]').focus();
+    }
+
     // locks the database, removing the decrypted section
     // and showing the lock screen
     $scope.lock = function() {
