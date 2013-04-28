@@ -509,6 +509,10 @@ function DatabaseControl($scope) {
         $scope.initializeDecryptedSection();
 
         $scope.lock_screen_visible = true;
+
+        setTimeout(function() {
+            $('#database_locked_widget input[type=password]').focus();
+        }, 100);
     }
 
     $scope.isUnlocked = function() {
