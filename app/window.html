@@ -56,7 +56,9 @@
 				 						 ng-disabled="!create_password_screen_visible"
 				 						 required>
 				<span class="error"
-				      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+				      ng-show="createPasswordForm.$error.identical">Passwords don't match<br></span>
+				<span class="error"
+				      ng-show="createPasswordForm.$error.empty">Password can't be empty<br></span>
 
 		 		<input type="submit"
 		 		       ng-click="verifyPasswordCreation()"

@@ -99,23 +99,25 @@ function CreatePasswordControl($scope) {
     $scope.password_again = '';
 
     $scope.verifyPasswordCreation = function() {
-        if ($scope.password != $scope.password_again) {
-            $scope.createPasswordForm.$setValidity('different', false);
-        } else {
-            $scope.createPasswordForm.$setValidity('different', true);
-            $scope.setPassword($scope.password, function() {
-                // first, we encrypt the uuid for a way to verify the password easily later
-                $scope.config.encrypted_uuid = $scope.encrypt($scope.config.uuid);
+        $scope.createPasswordForm.$setValidity('empty', Boolean($scope.password));
+        $scope.createPasswordForm.$setValidity('identical', $scope.password == $scope.password_again);
 
-                $scope.save('config.json', angular.toJson($scope.config), function() {
-                    $scope.$apply(function() {
-                        $scope.$parent.create_password_screen_visible = false;
-                        $scope.password = ''
-                        $scope.password_again = ''
-                    });
+        if ($scope.createPasswordForm.$invalid) {
+            return;
+        }
+
+        $scope.setPassword($scope.password, function() {
+            // first, we encrypt the uuid for a way to verify the password easily later
+            $scope.config.encrypted_uuid = $scope.encrypt($scope.config.uuid);
+
+            $scope.save('config.json', angular.toJson($scope.config), function() {
+                $scope.$apply(function() {
+                    $scope.$parent.create_password_screen_visible = false;
+                    $scope.password = ''
+                    $scope.password_again = ''
                 });
             });
-        }
+        });
     }
 }
 
