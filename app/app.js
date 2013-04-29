@@ -513,6 +513,10 @@ function DatabaseControl($scope) {
     // locks the database, removing the decrypted section
     // and showing the lock screen
     $scope.lock = function() {
+        // the save will happen asynchronously, but it's ok not to wait because
+        // the encryption has already happened.
+        $scope.editorToDatabase();
+
         delete $scope.decrypted;
         $scope.initializeDecryptedSection();
 
