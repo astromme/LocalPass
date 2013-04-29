@@ -1,6 +1,8 @@
 var module = angular.module('localPass', ['ui', 'ui.directives'])
 var controller = null;
 
+var AUTOSAVE_TIMEOUT = 10*1000;
+
 module.directive('noPropagateClick', function() {
     return function(scope, element, attrs) {
         $(element).click(function(event) {
@@ -674,10 +676,21 @@ function DatabaseControl($scope) {
         // console.log(params);
         $scope.$apply(function() {
             $scope.status_message = '';
+
+            if ($scope.autosave_timeout) {
+                return;
+            }
+
+            $scope.autosave_timeout = setTimeout(function() {
+                $scope.editorToDatabase();
+            }, AUTOSAVE_TIMEOUT);
         });
     }
 
     $scope.editorToDatabase = function() {
+        clearTimeout($scope.autosave_timeout);
+        $scope.autosave_timeout = null;
+
         if ($scope.decrypted.selected_entry_id) {
             $scope.status_message = "saving...";
 
