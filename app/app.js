@@ -171,15 +171,15 @@ function DatabaseControl($scope) {
 
 
     $scope.filesystem = null;
+    $scope.database_root = null;
+    $scope.database_root_name = "default";
+
     $scope.config = null;    
     $scope.database = null;
     $scope.decrypted = null;
 
     $scope.editor = null;
-    $scope.status_message = ''; // shown to the user as feedback
-
-    $scope.database_root = "default";
-    
+    $scope.status_message = ''; // shown to the user as feedback    
 
     $scope.init = function() {
         console.log('init');
@@ -297,8 +297,20 @@ function DatabaseControl($scope) {
                 console.log(bytesToSize(storageInfo.quotaBytes) + " quota.");
             });
             $scope.filesystem = fs;
-            get_config()
+
+            console.log('getting root folder: ' + $scope.database_root_name);
+            $scope.filesystem.root.getDirectory($scope.database_root_name,
+                                                {create:true},
+                                                function(dirEntry) {
+                console.log('got root folder');
+                $scope.database_root = dirEntry;
+                return get_config();
+
+            }, createErrorHandler('getting root folder'));
         });
+    }
+
+    $scope.databaseRoot = function() {
     }
 
     $scope.closeWindow = function() {
@@ -451,7 +463,7 @@ function DatabaseControl($scope) {
     }
 
     $scope.updateCache = function(callback) {
-        var dirReader = $scope.filesystem.root.createReader();
+        var dirReader = $scope.database_root.createReader();
         var entries = [];
         var numberRead = 0;
 
@@ -567,7 +579,7 @@ function DatabaseControl($scope) {
     $scope.deleteEntryWithID = function(id, suppressUpdatingSearch) {
         var filename = $scope.filename($scope.entry(uuid));
 
-        $scope.filesystem.root.getFile(filename, {create: false}, function(fileEntry) {
+        $scope.database_root.getFile(filename, {create: false}, function(fileEntry) {
 
             fileEntry.remove(function() {
                 delete $scope.decrypted.cache[id];
@@ -594,7 +606,7 @@ function DatabaseControl($scope) {
     }
 
     $scope.save = function(filename, contents, callback) {
-        $scope.filesystem.root.getFile(filename, {create: true}, function(file) {
+        $scope.database_root.getFile(filename, {create: true}, function(file) {
             file.createWriter(function (fileWriter) {
                 var blob = new Blob([contents], {type: 'text/plain'});
                 fileWriter.onwrite = function() {
