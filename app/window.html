@@ -17,6 +17,7 @@
     <script type="text/javascript" src="lib/pbkdf2/pbkdf2.js"></script>
     <script type="text/javascript" src="lib/xml2json/xml2json.js"></script>
     <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript" src="import.js"></script>
   </head>
   <body ng-controller="DatabaseControl" ng-init="init()">
   	<input type="text" id="hidden_copy_helper" class="display:none;"></input>
@@ -25,6 +26,10 @@
 	  	<h1>LocalPass</h1>
 	  	<span>{{status_message}}</span>
 		<div class="buttonbox no-drag">
+			<button tabindex="1"
+			        ng-click="deleteEntryClicked()"
+			        ng-hide="isLocked() || !decrypted.selected_entry_id">
+			        Delete</button>
 			<button tabindex="2" ng-click="import()" ng-hide="isLocked()">Import</button>
 			<button tabindex="3" ng-click="lock()" ng-hide="isLocked()">Lock</button>
 		 </div>
@@ -34,7 +39,7 @@
 	</div>
 
 	<div id="database_password_creation_widget"
-		 class="dbModalDialog hidden"
+		 class="dbModalDialog"
 	     ng-show="create_password_screen_visible">
 	    <div id='database_password_creation_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
@@ -51,7 +56,9 @@
 				 						 ng-disabled="!create_password_screen_visible"
 				 						 required>
 				<span class="error"
-				      ng-show="createPasswordForm.$error.different">Passwords don't match</span><br>
+				      ng-show="createPasswordForm.$error.identical">Passwords don't match<br></span>
+				<span class="error"
+				      ng-show="createPasswordForm.$error.empty">Password can't be empty<br></span>
 
 		 		<input type="submit"
 		 		       ng-click="verifyPasswordCreation()"
@@ -63,7 +70,8 @@
 
 	<div id="database_locked_widget"
 		 class="dbModalDialog"
-	     ng-show="lock_screen_visible">
+	     ng-show="lock_screen_visible"
+	     ng-click="focusLockPasswordInput()">
 	    <div id='database_locked_widget_inner' class="dbModalDialogInner">
 	    	<img src="preferences-desktop-cryptography.png">
 			<h2>The database is locked</h2>
@@ -88,7 +96,7 @@
 
 	<div id="loading_screen"
 		 class="dbModalDialog shown"
-	     ng-class="dbLoadingScreenClass">
+	     ng-show="loading_screen_visible">
 	     <div id="loading_inner" class="dbModalDialogInner">
 	     	<h1>Loading...</h1>
 	     </div>

@@ -1,4 +1,7 @@
 var module = angular.module('localPass', ['ui', 'ui.directives'])
+var controller = null;
+
+var AUTOSAVE_TIMEOUT = 10*1000;
 
 module.directive('noPropagateClick', function() {
     return function(scope, element, attrs) {
@@ -98,23 +101,25 @@ function CreatePasswordControl($scope) {
     $scope.password_again = '';
 
     $scope.verifyPasswordCreation = function() {
-        if ($scope.password != $scope.password_again) {
-            $scope.createPasswordForm.$setValidity('different', false);
-        } else {
-            $scope.createPasswordForm.$setValidity('different', true);
-            $scope.setPassword($scope.password, function() {
-                // first, we encrypt the uuid for a way to verify the password easily later
-                $scope.config.encrypted_uuid = $scope.encrypt($scope.config.uuid);
+        $scope.createPasswordForm.$setValidity('empty', Boolean($scope.password));
+        $scope.createPasswordForm.$setValidity('identical', $scope.password == $scope.password_again);
 
-                $scope.save('config.json', angular.toJson($scope.config), function() {
-                    $scope.$apply(function() {
-                        $scope.$parent.create_password_screen_visible = false;
-                        $scope.password = ''
-                        $scope.password_again = ''
-                    });
+        if ($scope.createPasswordForm.$invalid) {
+            return;
+        }
+
+        $scope.setPassword($scope.password, function() {
+            // first, we encrypt the uuid for a way to verify the password easily later
+            $scope.config.encrypted_uuid = $scope.encrypt($scope.config.uuid);
+
+            $scope.save('config.json', angular.toJson($scope.config), function() {
+                $scope.$apply(function() {
+                    $scope.$parent.create_password_screen_visible = false;
+                    $scope.password = ''
+                    $scope.password_again = ''
                 });
             });
-        }
+        });
     }
 }
 
@@ -131,6 +136,7 @@ function EnterPasswordControl($scope) {
             // check if the uuid decryption matches to verify the password
             try {
                 if ($scope.isLocked()) {
+                    $scope.initializeDecryptedSection();
                     $scope.$apply(function() {
                         $('#database_locked_widget input[type=password]').select()
                     })
@@ -166,6 +172,7 @@ function EnterPasswordControl($scope) {
 
 
 function DatabaseControl($scope) {
+    $scope.loading_screen_visible = true;
     $scope.lock_screen_visible = false;
     $scope.create_password_screen_visible = false;
 
@@ -183,6 +190,7 @@ function DatabaseControl($scope) {
 
     $scope.init = function() {
         console.log('init');
+        controller = $scope;
 
         $('#entries_list ul').keydown(function (e) {
             if ((e.which == 67 /* c */) && e.metaKey) {
@@ -251,7 +259,7 @@ function DatabaseControl($scope) {
                 $('#database_locked_widget').one('webkitTransitionEnd', function(e) {
                     console.log("hiding loading screen class");
                     $scope.$apply(function() {
-                        $scope.hide('dbLoadingScreenClass');
+                        $scope.loading_screen_visible = false;
                     });
                 });
 
@@ -274,7 +282,7 @@ function DatabaseControl($scope) {
                 $('#database_password_creation_widget').one('webkitTransitionEnd', function(e) {
                     console.log("hiding loading screen class");
                     $scope.$apply(function() {
-                        $scope.hide('dbLoadingScreenClass');
+                        $scope.loading_screen_visible = false;
                     });
                 });
   
@@ -369,75 +377,34 @@ function DatabaseControl($scope) {
             extensions: ['js', 'css', 'txt', 'html', 'xml', 'tsv', 'csv', 'rtf']
         }];
 
-        var translation = {
-            "lastaccess": "last_access",
-            "lastmod": "last_modification",
-        };
 
-        var root_level_keys = [
-            "creation",
-            "last_access",
-            "last_modification",
-        ];
 
         chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function(readOnlyEntry) {
             if (!readOnlyEntry) {
                 return;
             }
 
+            // get the file
             readOnlyEntry.file(function(file) {
+
+                // read it
                 readAsText(readOnlyEntry, function(result) {
-                    var parser = new DOMParser();
-                    var xmlDoc = parser.parseFromString(result,"text/xml");
-                    var json = angular.fromJson(xml2json(xmlDoc, ''));
 
-                    var handleSubgroups = function(object, prefixString) {
-                        var groups = object.group;
-                        if (!groups) { return; }
-                        if (!groups.forEach) { groups = [groups]; };
-                        groups.forEach(function(group) {
-                            var entries = group.entry;
-                            if (!entries) { entries = Object({}) }
-                            if (!entries.forEach) { entries = [entries]; }
-                            entries.forEach(function(entry) {
-                                entry.labels = [prefixString + group.title];
+                    // parse the KeyPassX xml
+                    parse_keypassx_xml(result,
 
-                                // process translations
-                                for (key in translation) {
-                                    // skip translations that don't do anything
-                                    if (key == translation[key]) {
-                                        continue;
-                                    }
+                        // on_each_entry_callback
+                        function(entry, entry_root_keys, callback) {
+                            $scope.createNewEntry(entry, entry_root_keys, callback);
+                        }, 
 
-                                    entry[translation[key]] = entry[key];
-                                    delete entry[key];
-                                }
-
-                                var root_keys = {};
-
-                                //process keys that need to be moved to the root
-                                for (var i=0; i<root_level_keys.length; i++) {
-                                    var key = root_level_keys[i];
-                                    root_keys[key] = entry[key];
-                                    delete entry[key];
-                                }
-
-                                $scope.createNewEntry(entry, root_keys, true /*suppress updating search */);
+                        // on_finished_callback
+                        function() {
+                           $scope.$apply(function() {
+                                $scope.updateSearch();
                             });
-
-                            if (group.group) {
-                                handleSubgroups(group, prefixString + group.title + '/');
-                            }
                         });
-                    }
-
-                    handleSubgroups(json.database, '');
-
-                    $scope.$apply(function() {
-                        $scope.updateSearch();
-                    });
                 });
-
             });
         });
     }
@@ -460,6 +427,41 @@ function DatabaseControl($scope) {
         }
 
         return angular.fromJson(json);
+    }
+
+    $scope.removeAllEntries = function() {
+        var processEntries = function(entries) {
+            var numberRemoved = 0;
+
+            entries.forEach(function(entry, i) {
+                entry.remove(function() {
+                    console.log("removed");
+
+                    numberRemoved += 1;
+                    if (numberRemoved == entries.length-1) { // config.json is skipped
+                        $scope.closeWindow();
+                    }
+                }, createErrorHandler("removing entry"));
+            });
+        }
+
+        // Call the reader.readEntries() until no more results are returned.
+        var readEntries = function(dirReader, entries) {
+            dirReader.readEntries (function(results) {
+                if (results.length) {
+                    entries = entries.concat(toArray(results));
+                    return readEntries(dirReader, entries);
+                }
+
+                processEntries(entries);
+
+            }, createErrorHandler("while parsing directory tree in $scope.removeAllEntries()"));
+        };
+
+        console.log("removing everything");
+        var dirReader = $scope.filesystem.root.createReader();
+        var entries = [];
+        readEntries(dirReader, entries); // Start reading dirs.
     }
 
     $scope.updateCache = function(callback) {
@@ -516,13 +518,25 @@ function DatabaseControl($scope) {
         readEntries(); // Start reading dirs.
     }
 
+    $scope.focusLockPasswordInput = function() {
+        $('#database_locked_widget input[type=password]').focus();
+    }
+
     // locks the database, removing the decrypted section
     // and showing the lock screen
     $scope.lock = function() {
+        // the save will happen asynchronously, but it's ok not to wait because
+        // the encryption has already happened.
+        $scope.editorToDatabase();
+
         delete $scope.decrypted;
         $scope.initializeDecryptedSection();
 
         $scope.lock_screen_visible = true;
+
+        setTimeout(function() {
+            $('#database_locked_widget input[type=password]').focus();
+        }, 100);
     }
 
     $scope.isUnlocked = function() {
@@ -548,7 +562,7 @@ function DatabaseControl($scope) {
         return object.uuid;
     }
 
-    $scope.createNewEntry = function(contents, root_level_keys, suppressUpdatingSearch) {
+    $scope.createNewEntry = function(contents, root_level_keys, callback) {
         var entry = Object();
         entry.uuid = generate_guid();
         entry.contents = contents;
@@ -561,25 +575,26 @@ function DatabaseControl($scope) {
             // Update the cache
             $scope.decrypted.cache[entry.uuid] = entry;
 
-            if (!suppressUpdatingSearch) {
-                $scope.$apply(function() {
-                   $scope.updateSearch();
-                });
-            }
+            callback();
         });
     }
 
     $scope.addEntryClicked = function() {
         console.log("addEntryClicked()");
         $scope.editorToDatabase();
-        $scope.createNewEntry({'title': $scope.newEntryTitle});
+        $scope.createNewEntry({'title': $scope.newEntryTitle}, function() {
+            $scope.$apply(function() {
+                $scope.updateSearch();
+            });
+        });
         $scope.newEntryTitle = '';
     }
 
     $scope.deleteEntryWithID = function(id, suppressUpdatingSearch) {
-        var filename = $scope.filename($scope.entry(uuid));
+        var filename = $scope.filename($scope.entry(id));
 
-        $scope.database_root.getFile(filename, {create: false}, function(fileEntry) {
+        console.log("removing " + filename);
+        $scope.filesystem.root.getFile(filename, {create: false}, function(fileEntry) {
 
             fileEntry.remove(function() {
                 delete $scope.decrypted.cache[id];
@@ -597,7 +612,7 @@ function DatabaseControl($scope) {
     }
 
     $scope.deleteEntryClicked = function() {
-        console.log("deleteEntryClickedd()");
+        console.log("deleteEntryClicked()");
         $scope.deleteEntryWithID($scope.decrypted.selected_entry_id);
     }
 
@@ -629,13 +644,13 @@ function DatabaseControl($scope) {
 
         var results = [];
         if (!query) {
-            for (uuid in $scope.decrypted.cache) {
+            for (var uuid in $scope.decrypted.cache) {
                 results.push(new Object({'uuid':uuid, 'object': $scope.entry(uuid)}));
             }
         } else {
             var search = query.toLowerCase();
 
-            for (uuid in $scope.decrypted.cache) {
+            for (var uuid in $scope.decrypted.cache) {
                 var object = $scope.entry(uuid);
                 var field = String(object.contents.title).toLowerCase();
                 index = field.indexOf(search);
@@ -677,10 +692,21 @@ function DatabaseControl($scope) {
         // console.log(params);
         $scope.$apply(function() {
             $scope.status_message = '';
+
+            if ($scope.autosave_timeout) {
+                return;
+            }
+
+            $scope.autosave_timeout = setTimeout(function() {
+                $scope.editorToDatabase();
+            }, AUTOSAVE_TIMEOUT);
         });
     }
 
     $scope.editorToDatabase = function() {
+        clearTimeout($scope.autosave_timeout);
+        $scope.autosave_timeout = null;
+
         if ($scope.decrypted.selected_entry_id) {
             $scope.status_message = "saving...";
 
@@ -707,6 +733,7 @@ function DatabaseControl($scope) {
             $scope.decrypted.selected_entry = $scope.decrypted.cache[$scope.decrypted.selected_entry_id];
             $scope.editor.set($scope.decrypted.selected_entry.contents);
             $scope.editor.setName($scope.decrypted.selected_entry.contents.title);
+            $scope.editor.expandAll();
         } else {
             //TODO: Disable editor and let the user know that they should select something
         }
@@ -792,21 +819,4 @@ function DatabaseControl($scope) {
         copy_helper.value = '';
         $('#'+$scope.decrypted.selected_entry_id).focus();
     }
-
-    $scope.showWithAnimation = function(variable) {
-        $scope[variable] = 'shownAnimation';
-    }
-    
-    $scope.show = function(variable) {
-        $scope[variable] = 'shown';
-    }
-
-    $scope.hideWithAnimation = function(variable) {
-        $scope[variable] = 'hiddenBelowAnimation';
-    }
-
-    $scope.hide = function(variable) {
-        $scope[variable] = 'hiddenBelow';
-    }
-
 }
