@@ -179,7 +179,7 @@ function DatabaseControl($scope) {
 
     $scope.filesystem = null;
     $scope.database_root = null;
-    $scope.database_root_name = "default";
+    $scope.database_root_name = "";
 
     $scope.config = null;    
     $scope.database = null;
@@ -308,7 +308,7 @@ function DatabaseControl($scope) {
 
             console.log('getting root folder: ' + $scope.database_root_name);
             $scope.filesystem.root.getDirectory($scope.database_root_name,
-                                                {create:true},
+                                                {create:false}, /* crbug.com/161442 */
                                                 function(dirEntry) {
                 console.log('got root folder');
                 $scope.database_root = dirEntry;
