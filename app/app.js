@@ -818,5 +818,8 @@ function DatabaseControl($scope) {
         document.execCommand('copy', false, null);
         copy_helper.value = '';
         $('#'+$scope.decrypted.selected_entry_id).focus();
+        $scope.$apply(function() {
+            $scope.status_message = "password copied to clipboard.";
+        });
     }
 }
